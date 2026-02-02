@@ -429,27 +429,131 @@
                 introText: (name, className) => `The stagecoach drops you at the edge of <span style="color:#ffcc00">DUSTY GULCH</span>, a town forgotten by civilization but not by trouble. You're ${name}, a ${className}. The wind carries whispers of gold, danger, and opportunity.`,
                 welcome: '"Welcome to Dusty Gulch, stranger. Watch your back."',
                 mainStreet: 'The dusty main street stretches before you. A saloon, general store, and sheriff\'s office line the road.',
-                saloon: 'Enter the Saloon',
-                store: 'Visit the General Store',
-                sheriff: 'Go to the Sheriff\'s Office',
-                wilderness: 'Head out of town',
+                saloon: '🍺 Enter the Saloon',
+                store: '🏪 Visit the General Store',
+                sheriff: '⭐ Go to the Sheriff\'s Office',
+                wilderness: '🌵 Head out of town',
                 saloonEnter: 'The saloon doors swing open. Piano music fills the smoky air. Cowboys eye you suspiciously.',
                 bartender: '"What\'ll it be, stranger?"',
-                buyDrink: 'Buy a drink ($5)',
-                playPoker: 'Play poker ($10)',
-                listenRumors: 'Listen to rumors',
-                leave: 'Leave',
+                roughMan: 'A rough-looking man in the corner stares at you menacingly...',
+                buyDrink: '🥃 Buy a drink ($5)',
+                playPoker: '🎰 Play poker ($10)',
+                listenRumors: '👂 Listen to rumors',
+                leave: '🚪 Leave',
+                confrontStranger: '⚔️ Confront the stranger',
+                drinkText: 'You slide 5 gold across the bar. The whiskey burns going down but warms your soul.',
+                hpRestored: '+10 HP restored',
+                bountyInfo: '"You look like someone who can handle trouble," the bartender whispers. "Word is, there\'s a bounty on Black Pete. $100 gold, dead or alive. He\'s holed up in the canyon east of here."',
+                askBlackPete: '👂 Ask about Black Pete',
+                pokerSit: 'You sit at the poker table. Cards are dealt...',
+                luckRoll: 'Luck roll',
+                jackpot: '🎉 JACKPOT! You clean out the table! +$30 gold!',
+                winHand: 'You win the hand! +$10 gold',
+                breakEven: 'You break even. The cards weren\'t with you today.',
+                badLuck: 'Bad luck! You lose $10 gold.',
+                playAgain: '🎰 Play again ($10)',
+                leaveTable: '🚪 Leave the table',
+                rumors: ['They say there\'s gold in Dead Man\'s Canyon, but nobody who goes there comes back...',
+                    'The sheriff ain\'t what he seems. Heard he\'s in with the gang.',
+                    'A prospector found a huge nugget last week. He\'s staying at the inn, flashing it around like a fool.',
+                    'Wolves have been attacking travelers on the north road. Be careful out there.',
+                    'Black Pete\'s gang robbed the bank last month. $1000 still missing.'],
+                listenMore: '👂 Listen more',
+                storeEnter: 'The general store is cramped but well-stocked. An old man peers at you from behind the counter.',
+                storeKeeper: '"See anything you like? Fair prices, I promise."',
+                buyBandage: '🩹 Buy Bandage ($15)',
+                buyWhiskey: '🥃 Buy Whiskey ($10)',
+                buyDynamite: '🧨 Buy Dynamite ($25)',
+                sellItems: '💰 Sell items',
+                purchased: 'You purchased',
+                buyMore: '🛒 Buy more',
+                sheriffOffice: 'The sheriff\'s office is quiet. Wanted posters line the walls.',
+                fellowLawman: 'The deputy recognizes your badge. "A fellow lawman! Welcome!"',
+                bounties: 'BOUNTIES:',
+                bountyPete: '🎯 Black Pete - $100 (Dangerous outlaw)',
+                bountyWolves: '🎯 Wolf Pack - $30 (Clear the north road)',
+                bountySnakes: '🎯 Snake Nest - $20 (Desert cleanup)',
+                huntPete: '🎯 Hunt Black Pete',
+                huntWolves: '🐺 Hunt the Wolf Pack',
+                huntSnakes: '🐍 Clear the Snake Nest',
+                wildernessText: 'You venture into the dusty plains. The sun beats down mercilessly.',
+                wolfAppears: '🐺 A wild wolf appears!',
+                foundCamp: 'You wander the wilderness and find an abandoned campsite.',
+                foundGold: (gold) => `You found ${gold} gold in an old saddlebag!`,
+                wildernessStretch: 'The wilderness stretches endlessly. Cacti dot the landscape.',
+                seeCanyon: 'In the distance, you see the canyon where Black Pete is said to hide...',
+                continueExploring: '🏜️ Continue exploring',
+                headCanyon: '⛰️ Head to the canyon',
+                returnTown: '🏠 Return to town',
+                canyonEnter: 'The canyon walls rise high above you. This is outlaw territory.',
+                spotSmoke: 'You spot campfire smoke deeper in the canyon. Black Pete\'s hideout must be close.',
+                dangerWarning: '⚠️ WARNING: Dangerous area ahead!',
+                stormCamp: '🔫 Storm the camp',
+                sneakApproach: '🤫 Sneak approach',
+                useDynamite: '🧨 Use dynamite (if you have it)',
+                retreat: '🏃 Retreat',
+                chargeIn: 'You charge into the camp, guns blazing!',
+                whoDares: '"Who dares?!" Black Pete draws his weapon.',
+                bossBattle: '⚔️ BOSS BATTLE: BLACK PETE!',
+                sneakShadows: 'You slip through the shadows like a ghost...',
+                sneakRoll: 'Sneak roll',
+                sneakSuccess: 'SUCCESS!',
+                foundStash: 'You found Pete\'s stash! +$50 gold!',
+                peteSpots: 'But Pete spots you as you leave!',
+                sneakFailed: 'FAILED!',
+                steppedTwig: 'You try to sneak but step on a twig...',
+                beenSpotted: 'You\'ve been spotted!',
+                lightDynamite: 'You light the dynamite and hurl it into the camp!',
+                boom: '💥 BOOM! The explosion rocks the canyon!',
+                peteTakes40: 'Black Pete takes 40 damage!',
+                peteEmerges: 'Wounded but alive, Pete emerges from the smoke...',
+                trackWolves: 'You track the wolf pack to the north road...',
+                alphaAttacks: '🐺 The alpha wolf attacks!',
+                findSnakes: 'You find the snake nest in the desert rocks...',
+                snakeStrikes: '🐍 A rattlesnake strikes!',
                 victory: '🏆 Victory!',
-                defeated: 'You defeated the',
-                goldEarned: 'gold earned!',
-                returnTown: 'Return to town',
-                continueExplore: 'Continue exploring',
+                youDefeated: (name) => `You defeated the ${name}!`,
+                goldEarned: (gold) => `+${gold} gold earned!`,
+                repGain: '⭐ Reputation +5 (brought outlaw to justice)',
+                bountyCollected: '💰 BOUNTY COLLECTED: +$100 gold!',
+                repLegend: '⭐ Reputation +50 (legendary feat!)',
+                continueExplore: '🏜️ Continue exploring',
+                attack: '⚔️ Attack',
+                defend: '🛡️ Defend',
+                useBandage: '🩹 Use Bandage',
+                drinkWhiskey: '🥃 Drink Whiskey',
+                throwDynamite: '🧨 Throw Dynamite',
+                hitRoll: 'Hit roll',
+                hit: 'HIT!',
+                critical: 'CRITICAL!',
+                youDeal: 'You deal',
+                damage: 'damage!',
+                miss: 'MISS!',
+                attacks: 'attacks!',
+                youTake: 'You take',
+                defended: '(defended)',
+                dodged: 'but you dodge!',
+                braceAttack: 'You brace for the attack...',
+                usedBandage: '🩹 You use a bandage! +20 HP',
+                drankWhiskey: '🥃 Whiskey! +15 HP, +2 STR!',
+                dynamiteBoom: '🧨 BOOM! 40 damage!',
+                enemyStunned: 'Enemy is stunned!',
+                stoleGold: (gold) => `💰 Stole ${gold} gold!`,
+                gameOver: '💀 GAME OVER',
+                metEnd: (name, className) => `${name} met their end in the dusty frontier...`,
+                gold: 'Gold',
+                enemiesDefeated: 'Enemies Defeated',
+                daysSurvived: 'Days Survived',
+                newGame: '▶ NEW GAME',
+                playAgainBtn: '🔄 Play Again',
                 endingTitle: '🌅 THE END 🌅',
                 endingText: (name) => `The dust settles over the canyon. Black Pete lies defeated at your feet. Word of your victory spreads like wildfire across the frontier. When you return to Dusty Gulch, the townsfolk gather in the streets.`,
+                endingGasp: '"You... you\'re faster than anyone I\'ve ever seen,"',
                 endingCheers: (name) => `"Three cheers for ${name}!" the crowd roars.`,
                 endingMayor: '"This town owes you everything. From this day forward, you are the true law of Dusty Gulch."',
                 legendWest: '🏆 YOU ARE NOW A LEGEND OF THE WEST! 🏆',
                 finalStats: 'Final Stats:',
+                reputation: 'Reputation',
                 remember: 'The frontier will remember your name forever...'
             },
             jp: {
@@ -468,21 +572,125 @@
                 wilderness: '🌵 町を出る',
                 saloonEnter: '酒場の扉が開く。ピアノの音が煙たい空気に響く。カウボーイたちが怪しげな目で君を見る。',
                 bartender: '「何にする、よそ者さん？」',
+                roughMan: '隅にいる荒くれ者が君を睨んでいる...',
                 buyDrink: '🥃 酒を買う ($5)',
                 playPoker: '🎰 ポーカーをする ($10)',
                 listenRumors: '👂 噂を聞く',
                 leave: '🚪 出る',
-                victory: '🏆 勝利！',
-                defeated: 'を倒した！',
-                goldEarned: 'ゴールド獲得！',
+                confrontStranger: '⚔️ よそ者に立ち向かう',
+                drinkText: 'カウンターに5ゴールドを置く。ウイスキーは喉を焼くが、心を温める。',
+                hpRestored: '+10 HP回復',
+                bountyInfo: '「お前さんはトラブルに対処できそうだな」とバーテンダーがささやく。「Black Peteに賞金がかかってるぜ。100ゴールド、生死問わず。東の峡谷に潜んでいるらしい」',
+                askBlackPete: '👂 Black Peteについて聞く',
+                pokerSit: 'ポーカーテーブルに座る。カードが配られた...',
+                luckRoll: '運試し',
+                jackpot: '🎉 大当たり！テーブルを一掃した！+$30ゴールド！',
+                winHand: '勝った！+$10ゴールド',
+                breakEven: '引き分け。今日はツイてないな。',
+                badLuck: '運が悪い！$10ゴールド失った。',
+                playAgain: '🎰 もう一度 ($10)',
+                leaveTable: '🚪 テーブルを離れる',
+                rumors: ['Dead Man\'s Canyonには金があるらしいが、行った者は誰も戻ってこない...',
+                    '保安官は見かけ通りじゃない。ギャングとつるんでるって話だ。',
+                    '先週、採掘者が巨大な金塊を見つけた。宿屋で見せびらかしてるバカだ。',
+                    '北の道でオオカミが旅人を襲っている。気をつけろよ。',
+                    'Black Peteのギャングが先月銀行を襲った。$1000がまだ行方不明だ。'],
+                listenMore: '👂 もっと聞く',
+                storeEnter: '雑貨店は狭いが品揃えは豊富だ。老人がカウンターの向こうから君を見ている。',
+                storeKeeper: '「何かお気に召すものは？正直な値段だよ」',
+                buyBandage: '🩹 包帯を買う ($15)',
+                buyWhiskey: '🥃 ウイスキーを買う ($10)',
+                buyDynamite: '🧨 ダイナマイトを買う ($25)',
+                sellItems: '💰 アイテムを売る',
+                purchased: '購入した：',
+                buyMore: '🛒 もっと買う',
+                sheriffOffice: '保安官事務所は静かだ。壁には指名手配のポスターが並んでいる。',
+                fellowLawman: '副保安官が君のバッジに気づいた。「同志よ！ようこそ！」',
+                bounties: '賞金首:',
+                bountyPete: '🎯 Black Pete - $100 (危険な無法者)',
+                bountyWolves: '🎯 オオカミの群れ - $30 (北の道を一掃)',
+                bountySnakes: '🎯 蛇の巣 - $20 (砂漠の掃除)',
+                huntPete: '🎯 Black Peteを狩る',
+                huntWolves: '🐺 オオカミの群れを狩る',
+                huntSnakes: '🐍 蛇の巣を一掃する',
+                wildernessText: '埃っぽい平原に踏み出す。太陽が容赦なく照りつける。',
+                wolfAppears: '🐺 野生のオオカミが現れた！',
+                foundCamp: '荒野をさまよい、放棄されたキャンプを見つけた。',
+                foundGold: (gold) => `古い鞍袋から${gold}ゴールドを見つけた！`,
+                wildernessStretch: '荒野が果てしなく広がる。サボテンが点在している。',
+                seeCanyon: '遠くにBlack Peteが潜んでいるという峡谷が見える...',
+                continueExploring: '🏜️ 探索を続ける',
+                headCanyon: '⛰️ 峡谷へ向かう',
                 returnTown: '🏠 町に戻る',
+                canyonEnter: '峡谷の壁が高くそびえ立つ。ここは無法者の領域だ。',
+                spotSmoke: '峡谷の奥にキャンプファイアの煙が見える。Black Peteの隠れ家に違いない。',
+                dangerWarning: '⚠️ 警告：危険地帯！',
+                stormCamp: '🔫 突撃する',
+                sneakApproach: '🤫 忍び寄る',
+                useDynamite: '🧨 ダイナマイトを使う',
+                retreat: '🏃 撤退する',
+                chargeIn: '銃を撃ちながらキャンプに突撃する！',
+                whoDares: '「誰だ！？」Black Peteが武器を構える。',
+                bossBattle: '⚔️ ボス戦：BLACK PETE！',
+                sneakShadows: '影のように忍び寄る...',
+                sneakRoll: '隠密判定',
+                sneakSuccess: '成功！',
+                foundStash: 'Peteの隠し場所を見つけた！+$50ゴールド！',
+                peteSpots: 'しかし去り際にPeteに見つかった！',
+                sneakFailed: '失敗！',
+                steppedTwig: '忍び寄ろうとしたが小枝を踏んでしまった...',
+                beenSpotted: '見つかった！',
+                lightDynamite: 'ダイナマイトに火をつけてキャンプに投げ込む！',
+                boom: '💥 ドカーン！爆発が峡谷に響く！',
+                peteTakes40: 'Black Peteに40ダメージ！',
+                peteEmerges: '傷を負いながらも、Peteが煙の中から現れる...',
+                trackWolves: 'オオカミの群れを北の道まで追跡する...',
+                alphaAttacks: '🐺 リーダーのオオカミが襲いかかる！',
+                findSnakes: '砂漠の岩場で蛇の巣を見つけた...',
+                snakeStrikes: '🐍 ガラガラヘビが襲ってきた！',
+                victory: '🏆 勝利！',
+                youDefeated: (name) => `${name}を倒した！`,
+                goldEarned: (gold) => `+${gold}ゴールド獲得！`,
+                repGain: '⭐ 評判+5（無法者を裁いた）',
+                bountyCollected: '💰 賞金獲得：+$100ゴールド！',
+                repLegend: '⭐ 評判+50（伝説的な功績！）',
                 continueExplore: '🏜️ 探索を続ける',
+                attack: '⚔️ 攻撃',
+                defend: '🛡️ 防御',
+                useBandage: '🩹 包帯を使う',
+                drinkWhiskey: '🥃 ウイスキーを飲む',
+                throwDynamite: '🧨 ダイナマイトを投げる',
+                hitRoll: '命中判定',
+                hit: '命中！',
+                critical: 'クリティカル！',
+                youDeal: '',
+                damage: 'ダメージ！',
+                miss: 'ミス！',
+                attacks: 'の攻撃！',
+                youTake: '',
+                defended: '（防御）',
+                dodged: 'を回避した！',
+                braceAttack: '攻撃に備える...',
+                usedBandage: '🩹 包帯を使った！+20 HP',
+                drankWhiskey: '🥃 ウイスキー！+15 HP、+2 STR！',
+                dynamiteBoom: '🧨 ドカーン！40ダメージ！',
+                enemyStunned: '敵がスタンした！',
+                stoleGold: (gold) => `💰 ${gold}ゴールド盗んだ！`,
+                gameOver: '💀 ゲームオーバー',
+                metEnd: (name, className) => `${name}は埃っぽいフロンティアで最期を迎えた...`,
+                gold: 'ゴールド',
+                enemiesDefeated: '倒した敵',
+                daysSurvived: '生存日数',
+                newGame: '▶ ニューゲーム',
+                playAgainBtn: '🔄 もう一度プレイ',
                 endingTitle: '🌅 終幕 🌅',
                 endingText: (name) => `峡谷に砂埃が舞い落ちる。Black Peteは君の足元に倒れている。君の勝利の知らせは、野火のようにフロンティア中に広がった。Dusty Gulchに戻ると、町の人々が通りに集まっていた。`,
+                endingGasp: '「お前は...今まで見た中で一番速い」',
                 endingCheers: (name) => `「${name}に乾杯！」群衆が叫ぶ。`,
                 endingMayor: '「この町は君に全てを借りがある。今日からあなたこそがDusty Gulchの真の法だ」',
-                legendWest: '🏆 君は西部の伝説となった！ 🏆',
+                legendWest: '🏆 君は西部の伝説となった！🏆',
                 finalStats: '最終ステータス:',
+                reputation: '評判',
                 remember: 'フロンティアは君の名前を永遠に記憶するだろう...'
             }
         };
@@ -744,10 +952,10 @@
                         { text: T('buyDrink'), action: 'buy_drink', disabled: player.gold < 5 },
                         { text: T('playPoker'), action: 'poker', disabled: player.gold < 10 },
                         { text: T('listenRumors'), action: 'rumors' },
-                        { text: '🚪 Leave', action: 'intro' }
+                        { text: T('leave'), action: 'intro' }
                     ];
                     if (Math.random() < 0.3) {
-                        choices.splice(2, 0, { text: '⚔️ Confront the stranger', action: 'bar_fight' });
+                        choices.splice(2, 0, { text: T('confrontStranger'), action: 'bar_fight' });
                     }
                     return choices;
                 }
@@ -758,15 +966,15 @@
                     player.hp = Math.min(player.maxHp, player.hp + 10);
                     updateStats();
                     return `
-                        <p class="narrator">You slide 5 gold across the bar. The whiskey burns going down but warms your soul.</p>
-                        <p class="loot">+10 HP restored</p>
-                        <p class="dialogue">"You look like someone who can handle trouble,"</span> the bartender whispers. <span class="dialogue">"Word is, there's a bounty on Black Pete. $100 gold, dead or alive. He's holed up in the canyon east of here."</p>
+                        <p class="narrator">${T('drinkText')}</p>
+                        <p class="loot">${T('hpRestored')}</p>
+                        <p class="dialogue">${T('bountyInfo')}</p>
                     `;
                 },
                 choices: () => [
-                    { text: '🎰 Play poker ($10)', action: 'poker', disabled: player.gold < 10 },
-                    { text: '👂 Ask about Black Pete', action: 'bounty_info' },
-                    { text: '🚪 Leave the saloon', action: 'intro' }
+                    { text: T('playPoker'), action: 'poker', disabled: player.gold < 10 },
+                    { text: T('askBlackPete'), action: 'bounty_info' },
+                    { text: T('leave'), action: 'intro' }
                 ]
             },
             poker: {
@@ -776,74 +984,68 @@
                     if (roll >= 18) {
                         player.gold += 30;
                         playSound('coin'); playSound('victory');
-                        result = `<p class="loot">🎉 JACKPOT! You clean out the table! +$30 gold!</p>`;
+                        result = `<p class="loot">${T('jackpot')}</p>`;
                     } else if (roll >= 12) {
                         player.gold += 10;
                         playSound('coin');
-                        result = `<p class="loot">You win the hand! +$10 gold</p>`;
+                        result = `<p class="loot">${T('winHand')}</p>`;
                     } else if (roll >= 6) {
-                        result = `<p class="narrator">You break even. The cards weren't with you today.</p>`;
+                        result = `<p class="narrator">${T('breakEven')}</p>`;
                         player.gold -= 10;
                         player.gold += 10;
                     } else {
                         player.gold -= 10;
                         playSound('hit');
-                        result = `<p class="combat">Bad luck! You lose $10 gold.</p>`;
+                        result = `<p class="combat">${T('badLuck')}</p>`;
                     }
                     updateStats();
                     return `
-                        <p class="narrator">You sit at the poker table. Cards are dealt...</p>
-                        <p class="system">🎲 Luck roll: ${roll}</p>
+                        <p class="narrator">${T('pokerSit')}</p>
+                        <p class="system">🎲 ${T('luckRoll')}: ${roll}</p>
                         ${result}
                     `;
                 },
                 choices: () => [
-                    { text: '🎰 Play again ($10)', action: 'poker', disabled: player.gold < 10 },
-                    { text: '🚪 Leave the table', action: 'saloon' }
+                    { text: T('playAgain'), action: 'poker', disabled: player.gold < 10 },
+                    { text: T('leaveTable'), action: 'saloon' }
                 ]
             },
             rumors: {
                 text: () => {
-                    const rumors = [
-                        `"They say there's gold in Dead Man's Canyon, but nobody who goes there comes back..."`,
-                        `"The sheriff ain't what he seems. Heard he's in with the gang."`,
-                        `"A prospector found a huge nugget last week. He's staying at the inn, flashing it around like a fool."`,
-                        `"Wolves have been attacking travelers on the north road. Be careful out there."`,
-                        `"Black Pete's gang robbed the bank last month. $1000 still missing."`
-                    ];
+                    const rumorsArr = T('rumors');
                     return `
-                        <p class="narrator">You lean against the bar, listening to the chatter...</p>
-                        <p class="dialogue">${rumors[Math.floor(Math.random() * rumors.length)]}</p>
+                        <p class="narrator">${lang === 'jp' ? 'バーにもたれかかり、話し声に耳を傾ける...' : 'You lean against the bar, listening to the chatter...'}</p>
+                        <p class="dialogue">"${rumorsArr[Math.floor(Math.random() * rumorsArr.length)]}"</p>
                     `;
                 },
                 choices: () => [
-                    { text: '👂 Listen more', action: 'rumors' },
-                    { text: '🍺 Buy a drink ($5)', action: 'buy_drink', disabled: player.gold < 5 },
-                    { text: '🚪 Leave', action: 'intro' }
+                    { text: T('listenMore'), action: 'rumors' },
+                    { text: T('buyDrink'), action: 'buy_drink', disabled: player.gold < 5 },
+                    { text: T('leave'), action: 'intro' }
                 ]
             },
             bar_fight: {
                 text: () => {
                     startCombat('bandit');
                     return `
-                        <p class="narrator">You approach the stranger. He stands, hand on his holster.</p>
-                        <p class="dialogue">"You got a problem, stranger?"</p>
-                        <p class="combat">⚔️ COMBAT INITIATED!</p>
+                        <p class="narrator">${lang === 'jp' ? 'よそ者に近づく。彼は立ち上がり、ホルスターに手をかける。' : 'You approach the stranger. He stands, hand on his holster.'}</p>
+                        <p class="dialogue">${lang === 'jp' ? '「何か文句があるのか、よそ者？」' : '"You got a problem, stranger?"'}</p>
+                        <p class="combat">${lang === 'jp' ? '⚔️ 戦闘開始！' : '⚔️ COMBAT INITIATED!'}</p>
                     `;
                 },
                 choices: []
             },
             store: {
                 text: () => `
-                    <p class="narrator">The general store is cramped but well-stocked. An old man peers at you from behind the counter.</p>
-                    <p class="dialogue">"See anything you like? Fair prices, I promise."</p>
+                    <p class="narrator">${T('storeEnter')}</p>
+                    <p class="dialogue">${T('storeKeeper')}</p>
                 `,
                 choices: () => [
-                    { text: '🩹 Buy Bandage ($15)', action: 'buy_bandage', disabled: player.gold < 15 },
+                    { text: T('buyBandage'), action: 'buy_bandage', disabled: player.gold < 15 },
                     { text: '🥃 Buy Whiskey ($10)', action: 'buy_whiskey', disabled: player.gold < 10 },
-                    { text: '🧨 Buy Dynamite ($25)', action: 'buy_dynamite', disabled: player.gold < 25 },
-                    { text: '💰 Sell items', action: 'sell_items' },
-                    { text: '🚪 Leave', action: 'intro' }
+                    { text: T('buyDynamite'), action: 'buy_dynamite', disabled: player.gold < 25 },
+                    { text: T('sellItems'), action: 'sell_items' },
+                    { text: T('leave'), action: 'intro' }
                 ]
             },
             buy_bandage: {
@@ -851,11 +1053,11 @@
                     player.gold -= 15;
                     player.inventory.push('bandage');
                     updateStats();
-                    return `<p class="loot">You purchased a Bandage! 🩹</p>`;
+                    return `<p class="loot">${T('purchased')} Bandage! 🩹</p>`;
                 },
-                choices: [
-                    { text: '🛒 Buy more', action: 'store' },
-                    { text: '🚪 Leave', action: 'intro' }
+                choices: () => [
+                    { text: T('buyMore'), action: 'store' },
+                    { text: T('leave'), action: 'intro' }
                 ]
             },
             buy_whiskey: {
@@ -863,11 +1065,11 @@
                     player.gold -= 10;
                     player.inventory.push('whiskey');
                     updateStats();
-                    return `<p class="loot">You purchased Whiskey! 🥃</p>`;
+                    return `<p class="loot">${T('purchased')} Whiskey! 🥃</p>`;
                 },
-                choices: [
-                    { text: '🛒 Buy more', action: 'store' },
-                    { text: '🚪 Leave', action: 'intro' }
+                choices: () => [
+                    { text: T('buyMore'), action: 'store' },
+                    { text: T('leave'), action: 'intro' }
                 ]
             },
             buy_dynamite: {
@@ -875,30 +1077,30 @@
                     player.gold -= 25;
                     player.inventory.push('dynamite');
                     updateStats();
-                    return `<p class="loot">You purchased Dynamite! 🧨</p>`;
+                    return `<p class="loot">${T('purchased')} Dynamite! 🧨</p>`;
                 },
-                choices: [
-                    { text: '🛒 Buy more', action: 'store' },
-                    { text: '🚪 Leave', action: 'intro' }
+                choices: () => [
+                    { text: T('buyMore'), action: 'store' },
+                    { text: T('leave'), action: 'intro' }
                 ]
             },
             sheriff: {
                 text: () => {
                     const hasBadge = player.inventory.includes('badge');
                     return `
-                        <p class="narrator">The sheriff's office is quiet. Wanted posters line the walls.</p>
-                        ${hasBadge ? `<p class="narrator">The deputy recognizes your badge. <span class="dialogue">"A fellow lawman! Welcome!"</span></p>` : ''}
-                        <p class="narrator">BOUNTIES:</p>
-                        <p class="system">🎯 Black Pete - $100 (Dangerous outlaw)</p>
-                        <p class="system">🎯 Wolf Pack - $30 (Clear the north road)</p>
-                        <p class="system">🎯 Snake Nest - $20 (Desert cleanup)</p>
+                        <p class="narrator">${T('sheriffOffice')}</p>
+                        ${hasBadge ? `<p class="narrator">${T('fellowLawman')}</p>` : ''}
+                        <p class="narrator">${T('bounties')}</p>
+                        <p class="system">${T('bountyPete')}</p>
+                        <p class="system">${T('bountyWolves')}</p>
+                        <p class="system">${T('bountySnakes')}</p>
                     `;
                 },
-                choices: [
-                    { text: '🎯 Hunt Black Pete', action: 'bounty_pete' },
-                    { text: '🐺 Hunt the Wolf Pack', action: 'bounty_wolves' },
-                    { text: '🐍 Clear the Snake Nest', action: 'bounty_snakes' },
-                    { text: '🚪 Leave', action: 'intro' }
+                choices: () => [
+                    { text: T('huntPete'), action: 'bounty_pete' },
+                    { text: T('huntWolves'), action: 'bounty_wolves' },
+                    { text: T('huntSnakes'), action: 'bounty_snakes' },
+                    { text: T('leave'), action: 'intro' }
                 ]
             },
             wilderness: {
@@ -906,21 +1108,21 @@
                     const encounter = Math.random();
                     if (encounter < 0.3) {
                         return `
-                            <p class="narrator">You venture into the dusty plains. The sun beats down mercilessly.</p>
-                            <p class="combat">🐺 A wild wolf appears!</p>
+                            <p class="narrator">${T('wildernessText')}</p>
+                            <p class="combat">${T('wolfAppears')}</p>
                         `;
                     } else if (encounter < 0.5) {
                         const goldFound = rollDice(10) + player.lck;
                         player.gold += goldFound;
                         updateStats();
                         return `
-                            <p class="narrator">You wander the wilderness and find an abandoned campsite.</p>
-                            <p class="loot">You found ${goldFound} gold in an old saddlebag!</p>
+                            <p class="narrator">${T('foundCamp')}</p>
+                            <p class="loot">${T('foundGold', goldFound)}</p>
                         `;
                     } else {
                         return `
-                            <p class="narrator">The wilderness stretches endlessly. Cacti dot the landscape.</p>
-                            <p class="narrator">In the distance, you see the canyon where Black Pete is said to hide...</p>
+                            <p class="narrator">${T('wildernessStretch')}</p>
+                            <p class="narrator">${T('seeCanyon')}</p>
                         `;
                     }
                 },
@@ -930,32 +1132,32 @@
                         return [];
                     }
                     return [
-                        { text: '🏜️ Continue exploring', action: 'wilderness' },
-                        { text: '⛰️ Head to the canyon', action: 'canyon_entrance' },
-                        { text: '🏠 Return to town', action: 'intro' }
+                        { text: T('continueExploring'), action: 'wilderness' },
+                        { text: T('headCanyon'), action: 'canyon_entrance' },
+                        { text: T('returnTown'), action: 'intro' }
                     ];
                 }
             },
             canyon_entrance: {
                 text: () => `
-                    <p class="narrator">The canyon walls rise high above you. This is outlaw territory.</p>
-                    <p class="narrator">You spot campfire smoke deeper in the canyon. Black Pete's hideout must be close.</p>
-                    <p class="system">⚠️ WARNING: Dangerous area ahead!</p>
+                    <p class="narrator">${T('canyonEnter')}</p>
+                    <p class="narrator">${T('spotSmoke')}</p>
+                    <p class="system">${T('dangerWarning')}</p>
                 `,
                 choices: () => [
-                    { text: '🔫 Storm the camp', action: 'pete_fight' },
-                    { text: '🤫 Sneak approach', action: 'pete_sneak' },
-                    { text: '🧨 Use dynamite (if you have it)', action: 'pete_dynamite', disabled: !player.inventory.includes('dynamite') },
-                    { text: '🏃 Retreat', action: 'wilderness' }
+                    { text: T('stormCamp'), action: 'pete_fight' },
+                    { text: T('sneakApproach'), action: 'pete_sneak' },
+                    { text: T('useDynamite'), action: 'pete_dynamite', disabled: !player.inventory.includes('dynamite') },
+                    { text: T('retreat'), action: 'wilderness' }
                 ]
             },
             pete_fight: {
                 text: () => {
                     startCombat('boss_gang');
                     return `
-                        <p class="narrator">You charge into the camp, guns blazing!</p>
-                        <p class="dialogue">"Who dares?!"</p> Black Pete draws his weapon.
-                        <p class="combat">⚔️ BOSS BATTLE: BLACK PETE!</p>
+                        <p class="narrator">${T('chargeIn')}</p>
+                        <p class="dialogue">${T('whoDares')}</p>
+                        <p class="combat">${T('bossBattle')}</p>
                     `;
                 },
                 choices: []
@@ -967,16 +1169,16 @@
                         player.gold += 50;
                         updateStats();
                         return `
-                            <p class="narrator">You slip through the shadows like a ghost...</p>
-                            <p class="system">🎲 Sneak roll: ${roll} - SUCCESS!</p>
-                            <p class="loot">You found Pete's stash! +$50 gold!</p>
-                            <p class="narrator">But Pete spots you as you leave!</p>
+                            <p class="narrator">${T('sneakShadows')}</p>
+                            <p class="system">🎲 ${T('sneakRoll')}: ${roll} - ${T('sneakSuccess')}</p>
+                            <p class="loot">${T('foundStash')}</p>
+                            <p class="narrator">${T('peteSpots')}</p>
                         `;
                     } else {
                         return `
-                            <p class="narrator">You try to sneak but step on a twig...</p>
-                            <p class="system">🎲 Sneak roll: ${roll} - FAILED!</p>
-                            <p class="combat">You've been spotted!</p>
+                            <p class="narrator">${T('steppedTwig')}</p>
+                            <p class="system">🎲 ${T('sneakRoll')}: ${roll} - ${T('sneakFailed')}</p>
+                            <p class="combat">${T('beenSpotted')}</p>
                         `;
                     }
                 },
@@ -991,10 +1193,10 @@
                     currentEnemy = {...ENEMY_TYPES.boss_gang};
                     currentEnemy.hp -= 40;
                     return `
-                        <p class="narrator">You light the dynamite and hurl it into the camp!</p>
-                        <p class="combat">💥 BOOM! The explosion rocks the canyon!</p>
-                        <p class="loot">Black Pete takes 40 damage!</p>
-                        <p class="narrator">Wounded but alive, Pete emerges from the smoke...</p>
+                        <p class="narrator">${T('lightDynamite')}</p>
+                        <p class="combat">${T('boom')}</p>
+                        <p class="loot">${T('peteTakes40')}</p>
+                        <p class="narrator">${T('peteEmerges')}</p>
                     `;
                 },
                 choices: () => {
@@ -1006,8 +1208,8 @@
                 text: () => {
                     startCombat('wolf');
                     return `
-                        <p class="narrator">You track the wolf pack to the north road...</p>
-                        <p class="combat">🐺 The alpha wolf attacks!</p>
+                        <p class="narrator">${T('trackWolves')}</p>
+                        <p class="combat">${T('alphaAttacks')}</p>
                     `;
                 },
                 choices: []
@@ -1016,8 +1218,8 @@
                 text: () => {
                     startCombat('snake');
                     return `
-                        <p class="narrator">You find the snake nest in the desert rocks...</p>
-                        <p class="combat">🐍 A rattlesnake strikes!</p>
+                        <p class="narrator">${T('findSnakes')}</p>
+                        <p class="combat">${T('snakeStrikes')}</p>
                     `;
                 },
                 choices: []
@@ -1128,19 +1330,20 @@
             const canUseSpecial = player.specialCooldown === 0;
             
             const choices = [
-                { text: '⚔️ Attack', action: 'combat_attack' },
-                { text: '🛡️ Defend', action: 'combat_defend' }
+                { text: T('attack'), action: 'combat_attack' },
+                { text: T('defend'), action: 'combat_defend' }
             ];
             
             // Add special ability
+            const turnText = lang === 'jp' ? 'ターン' : 'turns';
             const specialText = canUseSpecial 
                 ? `⚡ ${special.name}` 
-                : `⚡ ${special.name} (${player.specialCooldown} turns)`;
+                : `⚡ ${special.name} (${player.specialCooldown} ${turnText})`;
             choices.push({ text: specialText, action: 'combat_special', disabled: !canUseSpecial });
             
-            if (hasBandage) choices.push({ text: '🩹 Use Bandage', action: 'combat_bandage' });
-            if (hasWhiskey) choices.push({ text: '🥃 Drink Whiskey', action: 'combat_whiskey' });
-            if (hasDynamite) choices.push({ text: '🧨 Throw Dynamite', action: 'combat_dynamite' });
+            if (hasBandage) choices.push({ text: T('useBandage'), action: 'combat_bandage' });
+            if (hasWhiskey) choices.push({ text: T('drinkWhiskey'), action: 'combat_whiskey' });
+            if (hasDynamite) choices.push({ text: T('throwDynamite'), action: 'combat_dynamite' });
             
             showChoices(choices);
         }
@@ -1160,10 +1363,10 @@
                 if (isCrit) damage *= 2;
                 
                 currentEnemy.hp -= damage;
-                addCombatLog(`🎲 Hit roll: ${hitRoll} - HIT!${isCrit ? ' CRITICAL!' : ''}`, 'loot');
-                addCombatLog(`You deal <span class="dice-roll">${damage}</span> damage!`, 'combat');
+                addCombatLog(`🎲 ${T('hitRoll')}: ${hitRoll} - ${T('hit')}${isCrit ? ' ' + T('critical') : ''}`, 'loot');
+                addCombatLog(`${T('youDeal')} <span class="dice-roll">${damage}</span> ${T('damage')}`, 'combat');
             } else {
-                addCombatLog(`🎲 Hit roll: ${hitRoll} - MISS!`, 'system');
+                addCombatLog(`🎲 ${T('hitRoll')}: ${hitRoll} - ${T('miss')}`, 'system');
             }
             
             if (player.specialCooldown > 0) player.specialCooldown--;
@@ -1292,28 +1495,28 @@
                 // Reputation gain for defeating outlaws
                 if (['bandit', 'outlaw', 'desperado'].includes(currentEnemy.name?.toLowerCase())) {
                     player.reputation += 5;
-                    addStory('system', '⭐ Reputation +5 (brought outlaw to justice)');
+                    addStory('system', T('repGain'));
                 }
                 
                 updateStats();
                 
-                addStory('loot', `🏆 Victory! You defeated the ${currentEnemy.name}!`);
-                addStory('loot', `+${goldEarned} gold earned!`);
+                addStory('loot', `${T('victory')} ${T('youDefeated', currentEnemy.name)}`);
+                addStory('loot', T('goldEarned', goldEarned));
                 
                 // Check for boss victory - Show epic ending
                 if (currentEnemy.name === 'Gang Leader') {
                     player.gold += 100; // Bounty
                     player.reputation += 50;
                     updateStats();
-                    addStory('loot', `💰 BOUNTY COLLECTED: +$100 gold!`);
-                    addStory('system', '⭐ Reputation +50 (legendary feat!)');
+                    addStory('loot', T('bountyCollected'));
+                    addStory('system', T('repLegend'));
                     showScene('ending');
                     return;
                 }
                 
                 showChoices([
-                    { text: '🏠 Return to town', action: 'intro' },
-                    { text: '🏜️ Continue exploring', action: 'wilderness' }
+                    { text: T('returnTown'), action: 'intro' },
+                    { text: T('continueExplore'), action: 'wilderness' }
                 ]);
             } else {
                 playSound('death');
@@ -1325,16 +1528,16 @@
             gameOverEl.classList.add('visible');
             if (victory) {
                 gameOverEl.classList.add('victory');
-                document.getElementById('go-title').textContent = '🏆 VICTORY!';
-                document.getElementById('go-message').textContent = `${player.name} the ${player.classData.name} has become a legend of the West!`;
+                document.getElementById('go-title').textContent = T('legendWest');
+                document.getElementById('go-message').textContent = `${player.name} the ${player.classData.name} ${lang === 'jp' ? 'は西部の伝説となった！' : 'has become a legend of the West!'}`;
             } else {
-                document.getElementById('go-title').textContent = '💀 GAME OVER';
-                document.getElementById('go-message').textContent = `${player.name} met their end in the dusty frontier...`;
+                document.getElementById('go-title').textContent = T('gameOver');
+                document.getElementById('go-message').textContent = T('metEnd', player.name, player.classData.name);
             }
             document.getElementById('go-stats').innerHTML = `
-                Gold: ${player.gold}<br>
-                Enemies Defeated: ${player.kills}<br>
-                Days Survived: ${gameDay}
+                ${T('gold')}: ${player.gold}<br>
+                ${T('enemiesDefeated')}: ${player.kills}<br>
+                ${lang === 'jp' ? '生存日数' : 'Days Survived'}: ${gameDay}
             `;
         }
         
