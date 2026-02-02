@@ -41,6 +41,14 @@
       "created": "2026-02-02T15:48:00+08:00",
       "path": "005-cactus-jack/",
       "tags": ["flappy", "arcade", "western", "desert"]
+    },
+    {
+      "id": "006",
+      "name": "Jail Break",
+      "description": "牢屋破りブロック崩し！馬車でタンブルウィードを弾いて鉄格子を壊せ。パワーアップでマルチボール、拡大パドル、スローモーション",
+      "created": "2026-02-02T16:38:00+08:00",
+      "path": "006-jail-break/",
+      "tags": ["breakout", "arcade", "western", "puzzle"]
     }
   ]
 }

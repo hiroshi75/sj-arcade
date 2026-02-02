@@ -98,6 +98,40 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#006 Jail Break', () => {
+    test('タイトル画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/006-jail-break/`);
+      await page.waitForTimeout(500);
+      await expect(page.locator('#title-screen')).toBeVisible();
+      await expect(page.getByRole('button', { name: '▶ START' })).toBeVisible();
+    });
+
+    test('ゲームが開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/006-jail-break/`);
+      await page.waitForTimeout(500);
+      await page.click('.start-btn');
+      await page.waitForTimeout(500);
+      // HUD表示確認
+      await expect(page.locator('#hud')).toBeVisible();
+      await expect(page.locator('#score')).toBeVisible();
+    });
+
+    test('パドルが動く', async ({ page }) => {
+      await page.goto(`${BASE_URL}/006-jail-break/`);
+      await page.waitForTimeout(500);
+      await page.click('.start-btn');
+      await page.waitForTimeout(300);
+      
+      // 矢印キーでパドル移動
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowRight');
+      
+      // ゲームがクラッシュしていないことを確認
+      await expect(page.locator('#score')).toBeVisible();
+    });
+
+  });
+
   test.describe('#005 Cactus Jack', () => {
     test('タイトル画面が表示される', async ({ page }) => {
       await page.goto(`${BASE_URL}/005-cactus-jack/`);

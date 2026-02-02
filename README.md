@@ -79,6 +79,20 @@ Stranger Things風の80年代アメリカ田舎町アドベンチャー
 ![Cactus Jack](screenshots/cactus-jack.png)
 *AVOID THE CACTI!*
 
+---
+
+### #006 - Jail Break 🏛️💥
+牢屋破りブロック崩しゲーム
+
+**特徴:**
+- ← → / マウスでパドル操作
+- 鉄格子を壊して囚人を脱獄させろ！
+- パワーアップ4種（拡大、マルチボール、スロー、ライフ）
+- レベルが上がると敵が硬くなる
+
+![Jail Break](screenshots/jail-break.png)
+*BREAK THE BARS! FREE THE OUTLAWS!*
+
 ## 🚀 How to Play
 
 ```bash
