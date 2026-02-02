@@ -970,9 +970,19 @@
                     `left:${playerX}px;top:${playerY}px;animation:blink 0.2s infinite;` : 
                     `left:${playerX}px;top:${playerY}px`;
                 
+                const hpPercent = Math.max(0, state.health);
+                const hpColor = hpPercent > 50 ? '#6bcb77' : hpPercent > 25 ? '#ffd93d' : '#ff6b6b';
+                
                 area.innerHTML = `
                     <div class="game-text">🎮 ARROW KEYS = MOVE | SPACE or X = ATTACK</div>
-                    <div class="game-text">⏱️ TIME: ${timeLeft}s | 💀 KILLS: ${huntScore} | 🎮 LIVES: ${state.lives} | ❤️ HP: ${state.health}</div>
+                    <div class="game-text">⏱️ TIME: ${timeLeft}s | 💀 KILLS: ${huntScore} | 🎮 x${state.lives}</div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:5px 0;">
+                        <span style="color:#ff6b6b;font-size:20px;">❤️</span>
+                        <div style="width:200px;height:20px;background:#333;border:2px solid #666;border-radius:10px;overflow:hidden;">
+                            <div style="width:${hpPercent}%;height:100%;background:${hpColor};transition:width 0.2s,background 0.2s;"></div>
+                        </div>
+                        <span style="color:#fff;font-size:14px;min-width:45px;">${state.health}/100</span>
+                    </div>
                     <div class="forest-area" id="forest" tabindex="0" style="${gameActive ? 'border-color: #6bcb77; box-shadow: 0 0 20px rgba(107, 203, 119, 0.5);' : ''}">
                         ${trees.join('')}
                         <span class="player-icon" id="player" style="${playerStyle}">🔦</span>
