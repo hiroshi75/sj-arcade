@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Saddle Up! - Sheriff Jim's Retro Arcade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(180deg, #87CEEB 0%, #f4a460 60%, #deb887 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 5/7;
+            background: linear-gradient(180deg, #87CEEB 0%, #f4a460 50%, #c4a35a 100%);
+            border: 4px solid #8B4513;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+        /* Dust cloud at bottom */
+        .dust-cloud {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            background: radial-gradient(ellipse at bottom, #d2b48c 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 5;
+        }
+        /* Arena fence */
+        .fence {
+            position: absolute;
+            bottom: 60px;
+            left: 10%;
+            right: 10%;
+            height: 60px;
+            border: 4px solid #8B4513;
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            background: repeating-linear-gradient(90deg, transparent 0px, transparent 20px, #8B4513 20px, #8B4513 24px);
+        }
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            color: #8B4513;
+            font-size: 12px;
+            text-shadow: 1px 1px 0 #fff;
+            z-index: 20;
+        }
+        /* Balance meter */
+        #balance-container {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            z-index: 20;
+        }
+        #balance-label {
+            color: #8B4513;
+            font-size: 8px;
+            text-align: center;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 0 #fff;
+        }
+        #balance-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border: 2px solid #8B4513;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        #balance-fill {
+            position: absolute;
+            left: 50%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77);
+            transition: left 0.1s, width 0.1s;
+        }
+        #balance-center {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #fff;
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+        /* Timer */
+        #timer-display {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            color: #FFD700;
+            text-shadow: 3px 3px 0 #8B4513;
+            z-index: 20;
+        }
+        /* Bronco and rider */
+        #bronco-area {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 80px;
+            z-index: 10;
+            transition: transform 0.1s;
+        }
+        #bronco-area.buck-left { transform: translateX(-50%) rotate(-15deg) translateY(-20px); }
+        #bronco-area.buck-right { transform: translateX(-50%) rotate(15deg) translateY(-20px); }
+        #bronco-area.buck-up { transform: translateX(-50%) translateY(-40px); }
+        #bronco-area.buck-down { transform: translateX(-50%) translateY(10px) scaleY(0.9); }
+        .rider {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 50px;
+        }
+        /* Arrow prompts */
+        #arrow-zone {
+            position: absolute;
+            bottom: 280px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 15;
+        }
+        .arrow-slot {
+            width: 60px;
+            height: 60px;
+            background: rgba(0,0,0,0.3);
+            border: 3px solid #8B4513;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            color: #666;
+        }
+        .arrow-slot.active {
+            background: #FFD700;
+            border-color: #FF6600;
+            color: #8B4513;
+            animation: pulse 0.3s infinite alternate;
+        }
+        .arrow-slot.hit {
+            background: #6bcb77;
+            border-color: #228B22;
+        }
+        .arrow-slot.miss {
+            background: #ff6b6b;
+            border-color: #8B0000;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+        /* Current arrow indicator */
+        #current-arrow {
+            position: absolute;
+            bottom: 350px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 48px;
+            color: #FFD700;
+            text-shadow: 3px 3px 0 #8B4513;
+            z-index: 20;
+            animation: bounce 0.2s infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateX(-50%) translateY(0); }
+            to { transform: translateX(-50%) translateY(-10px); }
+        }
+        /* Overlays */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
+        }
+        .overlay.hidden { display: none; }
+        .overlay h1 {
+            color: #FFD700;
+            font-size: 24px;
+            text-shadow: 3px 3px 0 #8B4513;
+            margin-bottom: 20px;
+        }
+        .overlay .icon { font-size: 80px; margin: 20px 0; }
+        .overlay p {
+            color: #fff;
+            font-size: 10px;
+            margin: 10px 0;
+            line-height: 2;
+        }
+        .overlay .score { color: #FFD700; font-size: 16px; margin: 20px 0; }
+        .btn {
+            background: #8B4513;
+            color: #FFD700;
+            border: 3px solid #FFD700;
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .btn:hover { background: #FFD700; color: #8B4513; }
+        /* Mobile touch buttons */
+        #touch-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 50;
+        }
+        .touch-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .touch-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(139, 69, 19, 0.8);
+            border: 3px solid #FFD700;
+            border-radius: 10px;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .touch-btn:active { background: #FFD700; }
+        /* Mobile responsive */
+        @media (max-width: 520px) {
+            body { padding: 5px; }
+            #game-container { max-height: 95vh; }
+            #hud { font-size: 9px; }
+            #balance-container { width: 150px; }
+            #balance-label { font-size: 7px; }
+            #timer-display { font-size: 36px; top: 70px; }
+            #bronco-area { font-size: 60px; bottom: 80px; }
+            .rider { font-size: 40px; top: -50px; }
+            #arrow-zone { bottom: 220px; gap: 8px; }
+            .arrow-slot { width: 45px; height: 45px; font-size: 22px; }
+            #current-arrow { font-size: 36px; bottom: 280px; }
+            .overlay h1 { font-size: 18px; }
+            .overlay .icon { font-size: 60px; }
+            .overlay p { font-size: 8px; }
+            .btn { font-size: 10px; padding: 12px 24px; }
+            #touch-controls { display: block; }
+            .touch-btn { width: 50px; height: 50px; font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="dust-cloud"></div>
+        <div class="fence"></div>
+        
+        <div id="hud">
+            <div>BEST: <span id="best-time">0.0</span>s</div>
+            <div>STREAK: <span id="streak">0</span></div>
+        </div>
+        
+        <div id="balance-container">
+            <div id="balance-label">⚖️ BALANCE ⚖️</div>
+            <div id="balance-bar">
+                <div id="balance-fill"></div>
+                <div id="balance-center"></div>
+            </div>
+        </div>
+        
+        <div id="timer-display">8.0</div>
+        
+        <div id="current-arrow"></div>
+        
+        <div id="arrow-zone">
+            <div class="arrow-slot" data-dir="left">←</div>
+            <div class="arrow-slot" data-dir="up">↑</div>
+            <div class="arrow-slot" data-dir="down">↓</div>
+            <div class="arrow-slot" data-dir="right">→</div>
+        </div>
+        
+        <div id="bronco-area">
+            <span class="rider">🤠</span>
+            🐴
+        </div>
+        
+        <div id="touch-controls">
+            <div class="touch-row">
+                <div class="touch-btn" data-dir="up">↑</div>
+            </div>
+            <div class="touch-row">
+                <div class="touch-btn" data-dir="left">←</div>
+                <div class="touch-btn" data-dir="down">↓</div>
+                <div class="touch-btn" data-dir="right">→</div>
+            </div>
+        </div>
+        
+        <!-- Title Screen -->
+        <div id="title-screen" class="overlay">
+            <h1>🐴 SADDLE UP! 🐴</h1>
+            <div class="icon">🤠</div>
+            <p>STAY ON THE BUCKING BRONCO!</p>
+            <p>PRESS THE ARROWS IN TIME<br>TO KEEP YOUR BALANCE!</p>
+            <p>⬅️ ⬆️ ⬇️ ➡️ or TAP BUTTONS</p>
+            <p>SURVIVE 8 SECONDS TO WIN!</p>
+            <button class="btn" onclick="startGame()">▶ RIDE!</button>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="overlay hidden">
+            <h1 id="result-title">BUCKED OFF!</h1>
+            <div class="icon" id="result-icon">🤕</div>
+            <div class="score">TIME: <span id="final-time">0.0</span>s</div>
+            <p id="result-msg">Keep practicing, cowboy!</p>
+            <button class="btn" onclick="startGame()">▶ TRY AGAIN</button>
+        </div>
+    </div>
+    
+    <script>
+        // Audio
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        
+        function initAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
+        
+        function playSound(freq, dur, type = 'square') {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + dur);
+        }
+        
+        function playHit() { playSound(600, 0.1); playSound(800, 0.1); }
+        function playMiss() { playSound(150, 0.2, 'sawtooth'); }
+        function playWin() {
+            [523, 659, 784, 1047].forEach((f, i) => {
+                setTimeout(() => playSound(f, 0.2), i * 100);
+            });
+        }
+        function playBuck() { playSound(100 + Math.random() * 50, 0.1, 'sawtooth'); }
+        
+        // Game state
+        let gameState = 'title';
+        let timeLeft = 8.0;
+        let balance = 50; // 0-100, 50 is center
+        let currentDir = null;
+        let streak = 0;
+        let bestTime = parseFloat(localStorage.getItem('bronco_best') || '0');
+        let gameLoop = null;
+        let promptLoop = null;
+        let promptSpeed = 1200; // ms between prompts
+        
+        // DOM
+        const titleScreen = document.getElementById('title-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+        const timerDisplay = document.getElementById('timer-display');
+        const balanceFill = document.getElementById('balance-fill');
+        const broncoArea = document.getElementById('bronco-area');
+        const currentArrow = document.getElementById('current-arrow');
+        const arrowSlots = document.querySelectorAll('.arrow-slot');
+        const bestTimeEl = document.getElementById('best-time');
+        const streakEl = document.getElementById('streak');
+        
+        // Directions
+        const DIRS = ['left', 'up', 'down', 'right'];
+        const ARROWS = { left: '←', up: '↑', down: '↓', right: '→' };
+        const BUCK_CLASS = { left: 'buck-left', up: 'buck-up', down: 'buck-down', right: 'buck-right' };
+        
+        // Init
+        bestTimeEl.textContent = bestTime.toFixed(1);
+        
+        function startGame() {
+            gameState = 'playing';
+            timeLeft = 8.0;
+            balance = 50;
+            streak = 0;
+            promptSpeed = 1200;
+            currentDir = null;
+            
+            titleScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            currentArrow.textContent = '';
+            
+            arrowSlots.forEach(s => {
+                s.classList.remove('active', 'hit', 'miss');
+            });
+            
+            updateUI();
+            
+            // Main game loop (60fps)
+            gameLoop = setInterval(() => {
+                if (gameState !== 'playing') return;
+                
+                timeLeft -= 1/60;
+                
+                // Balance drifts toward edges
+                if (balance < 50) balance -= 0.1;
+                if (balance > 50) balance += 0.1;
+                
+                // Random wobble
+                balance += (Math.random() - 0.5) * 0.5;
+                
+                updateUI();
+                
+                // Win condition
+                if (timeLeft <= 0) {
+                    win();
+                    return;
+                }
+                
+                // Lose condition
+                if (balance <= 0 || balance >= 100) {
+                    lose();
+                    return;
+                }
+            }, 1000/60);
+            
+            // Prompt loop
+            nextPrompt();
+        }
+        
+        function nextPrompt() {
+            if (gameState !== 'playing') return;
+            
+            // Clear previous
+            arrowSlots.forEach(s => s.classList.remove('active', 'hit', 'miss'));
+            broncoArea.className = '';
+            
+            // Pick random direction
+            currentDir = DIRS[Math.floor(Math.random() * DIRS.length)];
+            currentArrow.textContent = ARROWS[currentDir];
+            
+            // Highlight slot
+            const slot = document.querySelector(`.arrow-slot[data-dir="${currentDir}"]`);
+            slot.classList.add('active');
+            
+            // Bronco bucks
+            broncoArea.classList.add(BUCK_CLASS[currentDir]);
+            playBuck();
+            
+            // If not pressed in time, it's a miss
+            promptLoop = setTimeout(() => {
+                if (gameState === 'playing' && currentDir) {
+                    miss();
+                }
+            }, promptSpeed * 0.8);
+            
+            // Schedule next prompt
+            setTimeout(() => {
+                if (gameState === 'playing') {
+                    // Speed up as time goes on
+                    promptSpeed = Math.max(400, promptSpeed - 30);
+                    nextPrompt();
+                }
+            }, promptSpeed);
+        }
+        
+        function handleInput(dir) {
+            if (gameState !== 'playing' || !currentDir) return;
+            
+            const slot = document.querySelector(`.arrow-slot[data-dir="${dir}"]`);
+            
+            if (dir === currentDir) {
+                // Correct!
+                clearTimeout(promptLoop);
+                slot.classList.remove('active');
+                slot.classList.add('hit');
+                playHit();
+                
+                streak++;
+                streakEl.textContent = streak;
+                
+                // Restore balance toward center
+                balance += (50 - balance) * 0.3;
+                
+                currentDir = null;
+                currentArrow.textContent = '✓';
+                
+                setTimeout(() => {
+                    slot.classList.remove('hit');
+                }, 200);
+            } else {
+                // Wrong button!
+                miss();
+            }
+        }
+        
+        function miss() {
+            if (!currentDir) return;
+            
+            const slot = document.querySelector(`.arrow-slot[data-dir="${currentDir}"]`);
+            slot.classList.remove('active');
+            slot.classList.add('miss');
+            playMiss();
+            
+            streak = 0;
+            streakEl.textContent = streak;
+            
+            // Push balance toward edge
+            if (currentDir === 'left' || currentDir === 'up') {
+                balance -= 20;
+            } else {
+                balance += 20;
+            }
+            
+            currentDir = null;
+            currentArrow.textContent = '✗';
+            
+            setTimeout(() => {
+                slot.classList.remove('miss');
+            }, 200);
+        }
+        
+        function updateUI() {
+            timerDisplay.textContent = Math.max(0, timeLeft).toFixed(1);
+            
+            // Balance bar: 0% = far left (bad), 50% = center (good), 100% = far right (bad)
+            const offset = (balance / 100) * 100;
+            balanceFill.style.left = Math.min(balance, 50) + '%';
+            balanceFill.style.width = Math.abs(balance - 50) + '%';
+            
+            // Color based on danger
+            const danger = Math.abs(balance - 50);
+            if (danger > 35) {
+                balanceFill.style.background = '#ff6b6b';
+            } else if (danger > 20) {
+                balanceFill.style.background = '#ffd93d';
+            } else {
+                balanceFill.style.background = '#6bcb77';
+            }
+        }
+        
+        function win() {
+            gameState = 'win';
+            clearInterval(gameLoop);
+            clearTimeout(promptLoop);
+            playWin();
+            
+            const finalTime = 8.0;
+            if (finalTime > bestTime) {
+                bestTime = finalTime;
+                localStorage.setItem('bronco_best', bestTime.toString());
+                bestTimeEl.textContent = bestTime.toFixed(1);
+            }
+            
+            document.getElementById('result-title').textContent = '🏆 YEEHAW! 🏆';
+            document.getElementById('result-icon').textContent = '🤠';
+            document.getElementById('final-time').textContent = '8.0';
+            document.getElementById('result-msg').textContent = 'You tamed the bronco!';
+            gameoverScreen.classList.remove('hidden');
+        }
+        
+        function lose() {
+            gameState = 'lose';
+            clearInterval(gameLoop);
+            clearTimeout(promptLoop);
+            playMiss();
+            
+            const survivedTime = 8.0 - timeLeft;
+            if (survivedTime > bestTime) {
+                bestTime = survivedTime;
+                localStorage.setItem('bronco_best', bestTime.toString());
+                bestTimeEl.textContent = bestTime.toFixed(1);
+            }
+            
+            document.getElementById('result-title').textContent = '💫 BUCKED OFF! 💫';
+            document.getElementById('result-icon').textContent = '🤕';
+            document.getElementById('final-time').textContent = survivedTime.toFixed(1);
+            document.getElementById('result-msg').textContent = survivedTime > 5 ? 'So close!' : 'Keep practicing!';
+            gameoverScreen.classList.remove('hidden');
+        }
+        
+        // Keyboard input
+        document.addEventListener('keydown', (e) => {
+            if (gameState === 'title' && e.code === 'Space') {
+                startGame();
+                return;
+            }
+            
+            if (gameState === 'playing') {
+                switch (e.key) {
+                    case 'ArrowLeft': case 'a': case 'A': handleInput('left'); break;
+                    case 'ArrowUp': case 'w': case 'W': handleInput('up'); break;
+                    case 'ArrowDown': case 's': case 'S': handleInput('down'); break;
+                    case 'ArrowRight': case 'd': case 'D': handleInput('right'); break;
+                }
+            }
+            
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+        
+        // Touch input
+        document.querySelectorAll('.touch-btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleInput(btn.dataset.dir);
+            });
+            btn.addEventListener('click', () => {
+                handleInput(btn.dataset.dir);
+            });
+        });
+    </script>
+</body>
+</html>

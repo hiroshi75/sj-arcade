@@ -299,4 +299,27 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#011 Saddle Up!', () => {
+    test('タイトル画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/011-bronco/`);
+      await expect(page.locator('#title-screen h1')).toContainText('SADDLE UP');
+    });
+
+    test('ゲームが開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/011-bronco/`);
+      await page.click('.btn');
+      await expect(page.locator('#title-screen')).toHaveClass(/hidden/);
+    });
+
+    test('矢印ボタンが反応する', async ({ page }) => {
+      await page.goto(`${BASE_URL}/011-bronco/`);
+      await page.click('.btn');
+      await page.waitForTimeout(500);
+      // 矢印キーを押すとゲームが反応する（バランスメーターがある）
+      await expect(page.locator('#balance-bar')).toBeVisible();
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowRight');
+    });
+  });
+
 });
