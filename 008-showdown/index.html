@@ -18,12 +18,19 @@
         }
         #game-container {
             position: relative;
-            width: 800px;
-            height: 600px;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 4/3;
             background: linear-gradient(180deg, #87CEEB 0%, #f4a460 50%, #deb887 100%);
             border: 6px solid #8B4513;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
             overflow: hidden;
+        }
+        @media (max-width: 480px) {
+            #game-container {
+                aspect-ratio: 3/4;
+                max-height: 90vh;
+            }
         }
         /* Sun */
         .sun {
@@ -294,7 +301,35 @@
         }
         @keyframes roll {
             from { left: -50px; transform: rotate(0deg); }
-            to { left: 850px; transform: rotate(720deg); }
+            to { left: 100%; transform: rotate(720deg); }
+        }
+        /* Mobile responsive */
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .sun { width: 50px; height: 50px; top: 15px; right: 30px; }
+            .ground { height: 35%; }
+            .building { display: none; }
+            .cowboy { font-size: 50px; bottom: 35%; }
+            .cowboy.player { left: 15%; }
+            .cowboy.enemy { right: 15%; }
+            #hud { font-size: 9px; padding: 5px; }
+            #message h1 { font-size: 28px; }
+            #message p { font-size: 10px; }
+            #message .draw { font-size: 48px; }
+            #message .ready { font-size: 20px; }
+            #message .result { font-size: 14px; }
+            #message .time { font-size: 32px; }
+            #title-screen h1 { font-size: 20px; }
+            #title-screen h2 { font-size: 16px; margin-bottom: 20px; }
+            #title-screen .cowboy-icon { font-size: 60px; }
+            #title-screen p { font-size: 8px; margin: 5px 0; }
+            .start-btn { font-size: 12px; padding: 12px 24px; }
+            #game-over h1, #victory h1 { font-size: 18px; }
+            #game-over .stats, #victory .stats { font-size: 10px; }
+            #game-over .best { font-size: 12px; }
+            #victory .badge { font-size: 50px; }
+            .tumbleweed { font-size: 20px; bottom: 36%; }
+            .flash { font-size: 30px; }
         }
     </style>
 </head>

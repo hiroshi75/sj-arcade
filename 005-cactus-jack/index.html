@@ -168,6 +168,28 @@
             box-shadow: 0 0 30px #FFD700;
             pointer-events: none;
         }
+        /* Mobile responsive */
+        @media (max-width: 420px) {
+            body { padding: 5px; }
+            #game-container { 
+                width: 100%; 
+                max-width: 100vw;
+                height: auto;
+                aspect-ratio: 2/3;
+                max-height: 90vh;
+            }
+            #game-canvas { width: 100%; height: 100%; }
+            .title { font-size: 18px; }
+            .subtitle { font-size: 8px; margin-bottom: 15px; }
+            .player-preview { font-size: 48px; margin: 10px 0; }
+            .instructions { font-size: 7px; line-height: 1.8; margin: 10px 0; }
+            .start-btn { font-size: 12px; padding: 12px 24px; }
+            .score-display { font-size: 10px; }
+            .high-score { font-size: 9px; }
+            .medal { font-size: 36px; }
+            #hud { font-size: 10px; padding: 0 10px; }
+            .sun { width: 35px; height: 35px; top: 15px; right: 20px; }
+        }
     </style>
 </head>
 <body>
