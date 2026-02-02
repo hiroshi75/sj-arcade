@@ -449,6 +449,64 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-10px); }
+            40% { transform: translateX(10px); }
+            60% { transform: translateX(-10px); }
+            80% { transform: translateX(10px); }
+        }
+        
+        @keyframes hitFlash {
+            0% { background: rgba(255, 0, 0, 0.8); }
+            100% { background: transparent; }
+        }
+        
+        .screen-shake {
+            animation: shake 0.3s ease-out;
+        }
+        
+        .hit-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            animation: hitFlash 0.3s ease-out forwards;
+        }
+        
+        .explosion {
+            position: absolute;
+            font-size: 48px;
+            z-index: 50;
+            animation: explode 0.5s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes explode {
+            0% { transform: scale(0.5); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.8; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        .damage-text {
+            position: absolute;
+            color: #ff0000;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 60;
+            animation: damageFloat 1s ease-out forwards;
+            pointer-events: none;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        @keyframes damageFloat {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-40px); opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -561,6 +619,55 @@
             setTimeout(() => playSound(784, 0.2), 200);
         }
         function playLose() { playSound(200, 0.3, 'sawtooth'); }
+        
+        // Visual Effects
+        function showHitEffect(x, y, damage) {
+            const gameArea = document.getElementById('game-area');
+            if (!gameArea) return;
+            
+            // Screen shake
+            gameArea.classList.add('screen-shake');
+            setTimeout(() => gameArea.classList.remove('screen-shake'), 300);
+            
+            // Red flash overlay
+            const flash = document.createElement('div');
+            flash.className = 'hit-flash';
+            gameArea.appendChild(flash);
+            setTimeout(() => flash.remove(), 300);
+            
+            // Explosion emoji
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion';
+            explosion.textContent = '💥';
+            explosion.style.left = (x - 24) + 'px';
+            explosion.style.top = (y - 24) + 'px';
+            const forest = document.getElementById('forest');
+            if (forest) forest.appendChild(explosion);
+            setTimeout(() => explosion.remove(), 500);
+            
+            // Damage number
+            const dmgText = document.createElement('div');
+            dmgText.className = 'damage-text';
+            dmgText.textContent = `-${damage}`;
+            dmgText.style.left = x + 'px';
+            dmgText.style.top = (y - 20) + 'px';
+            if (forest) forest.appendChild(dmgText);
+            setTimeout(() => dmgText.remove(), 1000);
+        }
+        
+        function showKillEffect(x, y) {
+            const forest = document.getElementById('forest');
+            if (!forest) return;
+            
+            // Monster death explosion
+            const explosion = document.createElement('div');
+            explosion.className = 'explosion';
+            explosion.textContent = '✨';
+            explosion.style.left = (x - 24) + 'px';
+            explosion.style.top = (y - 24) + 'px';
+            forest.appendChild(explosion);
+            setTimeout(() => explosion.remove(), 500);
+        }
         
         // Update UI
         function updateStats() {
@@ -952,6 +1059,7 @@
                         if (dist < 20 && !state.invincible) {
                             state.health -= 25;
                             playLose();
+                            showHitEffect(playerCenterX, playerCenterY, 25);
                             
                             // Check if lost a life
                             if (state.health <= 0) {
@@ -1034,6 +1142,7 @@
                                     m.alive = false;
                                     huntScore++;
                                     playWin();
+                                    showKillEffect(mCenterX, mCenterY);
                                 }
                             });
                             break;
