@@ -165,6 +165,34 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#009 Dusty Trails', () => {
+    test('キャラクター作成画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/009-trpg/`);
+      await page.waitForTimeout(1000);
+      await expect(page.locator('header h1')).toContainText('DUSTY TRAILS');
+      await expect(page.locator('#char-name')).toBeVisible();
+    });
+
+    test('クラスを選択できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/009-trpg/`);
+      await page.waitForTimeout(500);
+      // Click on gunslinger class
+      await page.click('.class-card[data-class="gunslinger"]');
+      await expect(page.locator('.class-card[data-class="gunslinger"]')).toHaveClass(/selected/);
+    });
+
+    test('ゲームを開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/009-trpg/`);
+      await page.waitForTimeout(500);
+      await page.fill('#char-name', 'TestPlayer');
+      await page.click('.class-card[data-class="sheriff"]');
+      await page.click('.choice-btn');
+      await page.waitForTimeout(500);
+      // Stats bar should be visible
+      await expect(page.locator('#stats-bar')).toHaveClass(/visible/);
+    });
+  });
+
   test.describe('#008 Quick Draw Showdown', () => {
     test('タイトル画面が表示される', async ({ page }) => {
       await page.goto(`${BASE_URL}/008-showdown/`);

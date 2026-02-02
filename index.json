@@ -66,6 +66,14 @@
       "created": "2026-02-02T17:49:00+08:00",
       "path": "008-showdown/",
       "tags": ["reaction", "arcade", "western", "duel"]
+    },
+    {
+      "id": "009",
+      "name": "Dusty Trails",
+      "description": "西部テキストアドベンチャーRPG！ガンスリンガー、保安官、無法者、採掘者から選んでDusty Gulchの町を冒険。ターン制バトル、ダイスロール、選択分岐ストーリー！",
+      "created": "2026-02-02T18:30:00+08:00",
+      "path": "009-trpg/",
+      "tags": ["rpg", "text-adventure", "western", "turn-based"]
     }
   ]
 }

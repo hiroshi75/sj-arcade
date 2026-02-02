@@ -124,6 +124,23 @@ Stranger Things風の80年代アメリカ田舎町アドベンチャー
 ![Quick Draw Showdown](screenshots/showdown.png)
 *THE FASTEST GUN IN THE WEST!*
 
+---
+
+### #009 - Dusty Trails 📜🤠
+西部テキストアドベンチャーRPG
+
+**特徴:**
+- 4つのクラス（ガンスリンガー、保安官、無法者、採掘者）
+- ステータス（HP, STR, DEX, LCK）
+- ターン制コンバット＆ダイスロール
+- 町探索（酒場、店、保安官事務所）
+- バウンティハント＆ボス戦
+- アイテム＆インベントリシステム
+- 選択分岐ストーリー
+
+![Dusty Trails](screenshots/dusty-trails.png)
+*THE FRONTIER AWAITS...*
+
 ## 🚀 How to Play
 
 ```bash

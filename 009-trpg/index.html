@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dusty Trails - Sheriff Jim's Retro Arcade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            min-height: 100vh;
+            font-family: 'Press Start 2P', cursive;
+            color: #33ff33;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        #game-container {
+            width: 100%;
+            max-width: 900px;
+            background: #111;
+            border: 4px solid #33ff33;
+            box-shadow: 0 0 20px rgba(51, 255, 51, 0.3), inset 0 0 100px rgba(0,0,0,0.5);
+            padding: 20px;
+            position: relative;
+        }
+        /* CRT effect */
+        #game-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0,0,0,0.1) 0px,
+                rgba(0,0,0,0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+        }
+        header {
+            text-align: center;
+            border-bottom: 2px solid #33ff33;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            font-size: 24px;
+            color: #ffcc00;
+            text-shadow: 2px 2px #8B4513;
+            margin-bottom: 5px;
+        }
+        header .subtitle {
+            font-size: 10px;
+            color: #33ff33;
+        }
+        /* Stats bar */
+        #stats-bar {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 2px solid #33ff33;
+            margin-bottom: 15px;
+            font-size: 10px;
+        }
+        #stats-bar.visible { display: grid; }
+        .stat { display: flex; justify-content: space-between; }
+        .stat-label { color: #999; }
+        .stat-value { color: #ffcc00; }
+        .stat-value.hp { color: #ff3333; }
+        .stat-value.gold { color: #ffcc00; }
+        /* Main content */
+        #story-area {
+            min-height: 300px;
+            padding: 15px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            margin-bottom: 15px;
+            font-size: 11px;
+            line-height: 1.8;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        #story-area p { margin-bottom: 15px; }
+        #story-area .narrator { color: #33ff33; }
+        #story-area .dialogue { color: #ffcc00; font-style: italic; }
+        #story-area .system { color: #ff6600; }
+        #story-area .combat { color: #ff3333; }
+        #story-area .loot { color: #00ffff; }
+        #story-area .choice-result { color: #ff66ff; }
+        /* Choices */
+        #choices-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .choice-btn {
+            background: #1a1a1a;
+            border: 2px solid #33ff33;
+            color: #33ff33;
+            padding: 12px 15px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .choice-btn:hover {
+            background: #33ff33;
+            color: #0a0a0a;
+        }
+        .choice-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .choice-btn .key {
+            color: #ffcc00;
+            margin-right: 10px;
+        }
+        .choice-btn:hover .key { color: #0a0a0a; }
+        /* Character creation */
+        #char-create {
+            text-align: center;
+        }
+        #char-create h2 {
+            color: #ffcc00;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        #char-create input {
+            background: #1a1a1a;
+            border: 2px solid #33ff33;
+            color: #33ff33;
+            padding: 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #char-create input::placeholder { color: #555; }
+        .class-select {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .class-card {
+            background: #1a1a1a;
+            border: 2px solid #555;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .class-card:hover, .class-card.selected {
+            border-color: #ffcc00;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+        }
+        .class-card .icon { font-size: 32px; margin-bottom: 10px; }
+        .class-card .name { color: #ffcc00; font-size: 12px; margin-bottom: 8px; }
+        .class-card .desc { color: #999; font-size: 8px; line-height: 1.6; }
+        .class-card .stats-preview { color: #33ff33; font-size: 8px; margin-top: 10px; }
+        /* Combat UI */
+        #combat-area {
+            display: none;
+            background: #1a0a0a;
+            border: 2px solid #ff3333;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        #combat-area.visible { display: block; }
+        .combat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        .combatant {
+            text-align: center;
+        }
+        .combatant .name { color: #ffcc00; margin-bottom: 5px; }
+        .combatant .hp-bar {
+            width: 150px;
+            height: 15px;
+            background: #333;
+            border: 1px solid #ff3333;
+            margin: 0 auto;
+        }
+        .combatant .hp-fill {
+            height: 100%;
+            background: #ff3333;
+            transition: width 0.3s;
+        }
+        .combatant .hp-text { font-size: 10px; color: #ff3333; margin-top: 5px; }
+        .vs { color: #ff3333; font-size: 20px; }
+        #combat-log {
+            background: #0a0a0a;
+            padding: 10px;
+            font-size: 9px;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        #combat-log p { margin: 5px 0; }
+        /* Inventory */
+        #inventory {
+            display: none;
+            background: #1a1a0a;
+            border: 2px solid #ffcc00;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        #inventory.visible { display: block; }
+        #inventory h3 { color: #ffcc00; font-size: 12px; margin-bottom: 10px; }
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        .item-slot {
+            background: #0a0a0a;
+            border: 1px solid #555;
+            padding: 10px;
+            text-align: center;
+            font-size: 8px;
+        }
+        .item-slot .item-icon { font-size: 24px; margin-bottom: 5px; }
+        .item-slot .item-name { color: #ffcc00; }
+        .item-slot .item-qty { color: #33ff33; }
+        /* Game over */
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.95);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 100;
+        }
+        #game-over.visible { display: flex; }
+        #game-over h1 { color: #ff3333; font-size: 24px; margin-bottom: 20px; }
+        #game-over.victory h1 { color: #ffcc00; }
+        #game-over p { color: #999; font-size: 10px; margin: 10px 0; }
+        #game-over .final-stats { color: #33ff33; margin: 20px 0; }
+        .restart-btn {
+            background: #33ff33;
+            color: #0a0a0a;
+            border: none;
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .restart-btn:hover { background: #66ff66; }
+        /* Dice roll animation */
+        .dice-roll {
+            display: inline-block;
+            animation: shake 0.3s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-5deg); }
+            75% { transform: translateX(5px) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>🌵 DUSTY TRAILS 🌵</h1>
+            <div class="subtitle">A Western Text Adventure</div>
+        </header>
+        
+        <div id="stats-bar">
+            <div class="stat"><span class="stat-label">HP</span><span class="stat-value hp" id="hp">--</span></div>
+            <div class="stat"><span class="stat-label">STR</span><span class="stat-value" id="str">--</span></div>
+            <div class="stat"><span class="stat-label">DEX</span><span class="stat-value" id="dex">--</span></div>
+            <div class="stat"><span class="stat-label">LCK</span><span class="stat-value" id="lck">--</span></div>
+            <div class="stat"><span class="stat-label">GOLD</span><span class="stat-value gold" id="gold">--</span></div>
+            <div class="stat"><span class="stat-label">DAY</span><span class="stat-value" id="day">--</span></div>
+        </div>
+        
+        <div id="combat-area">
+            <div class="combat-header">
+                <div class="combatant player">
+                    <div class="name" id="player-name">Player</div>
+                    <div class="hp-bar"><div class="hp-fill" id="player-hp-bar"></div></div>
+                    <div class="hp-text"><span id="player-hp-text">--</span> HP</div>
+                </div>
+                <div class="vs">⚔️</div>
+                <div class="combatant enemy">
+                    <div class="name" id="enemy-name">Enemy</div>
+                    <div class="hp-bar"><div class="hp-fill" id="enemy-hp-bar"></div></div>
+                    <div class="hp-text"><span id="enemy-hp-text">--</span> HP</div>
+                </div>
+            </div>
+            <div id="combat-log"></div>
+        </div>
+        
+        <div id="inventory">
+            <h3>🎒 INVENTORY</h3>
+            <div class="inventory-grid" id="inventory-grid"></div>
+        </div>
+        
+        <div id="story-area"></div>
+        
+        <div id="choices-area"></div>
+        
+        <div id="game-over">
+            <h1 id="go-title">GAME OVER</h1>
+            <p id="go-message"></p>
+            <div class="final-stats" id="go-stats"></div>
+            <button class="restart-btn" onclick="startGame()">▶ NEW GAME</button>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        let player = null;
+        let currentScene = null;
+        let gameDay = 1;
+        let enemies = [];
+        let inCombat = false;
+        let currentEnemy = null;
+        
+        // Character classes
+        const CLASSES = {
+            gunslinger: {
+                name: 'Gunslinger',
+                icon: '🔫',
+                desc: 'Fast and deadly. Lives by the gun.',
+                hp: 80, str: 12, dex: 14, lck: 8,
+                startItems: ['revolver', 'bullets_12']
+            },
+            sheriff: {
+                name: 'Sheriff',
+                icon: '⭐',
+                desc: 'Tough and righteous. The law of the land.',
+                hp: 100, str: 10, dex: 10, lck: 10,
+                startItems: ['badge', 'revolver', 'bandage']
+            },
+            outlaw: {
+                name: 'Outlaw',
+                icon: '🤠',
+                desc: 'Lucky and cunning. Takes what they want.',
+                hp: 70, str: 8, dex: 12, lck: 14,
+                startItems: ['knife', 'lockpick', 'whiskey']
+            },
+            prospector: {
+                name: 'Prospector',
+                icon: '⛏️',
+                desc: 'Hardy and lucky. Seeking fortune.',
+                hp: 90, str: 14, dex: 6, lck: 12,
+                startItems: ['pickaxe', 'dynamite', 'gold_nugget']
+            }
+        };
+        
+        // Items
+        const ITEMS = {
+            revolver: { name: 'Revolver', icon: '🔫', type: 'weapon', damage: 15 },
+            knife: { name: 'Knife', icon: '🔪', type: 'weapon', damage: 8 },
+            pickaxe: { name: 'Pickaxe', icon: '⛏️', type: 'weapon', damage: 12 },
+            rifle: { name: 'Rifle', icon: '🎯', type: 'weapon', damage: 25 },
+            bandage: { name: 'Bandage', icon: '🩹', type: 'heal', heal: 20 },
+            whiskey: { name: 'Whiskey', icon: '🥃', type: 'heal', heal: 15, strBoost: 2 },
+            dynamite: { name: 'Dynamite', icon: '🧨', type: 'combat', damage: 40 },
+            gold_nugget: { name: 'Gold Nugget', icon: '✨', type: 'valuable', value: 50 },
+            bullets_12: { name: 'Bullets x12', icon: '🔘', type: 'ammo', qty: 12 },
+            badge: { name: "Sheriff's Badge", icon: '⭐', type: 'special', effect: 'respect' },
+            lockpick: { name: 'Lockpick', icon: '🔑', type: 'tool' },
+            horse: { name: 'Horse', icon: '🐴', type: 'mount', speed: 2 }
+        };
+        
+        // Enemies
+        const ENEMY_TYPES = {
+            bandit: { name: 'Bandit', icon: '🤠', hp: 40, str: 8, dex: 8, gold: 20 },
+            outlaw: { name: 'Outlaw', icon: '😈', hp: 60, str: 12, dex: 10, gold: 40 },
+            wolf: { name: 'Wild Wolf', icon: '🐺', hp: 30, str: 10, dex: 12, gold: 5 },
+            snake: { name: 'Rattlesnake', icon: '🐍', hp: 15, str: 15, dex: 14, gold: 0 },
+            bear: { name: 'Grizzly Bear', icon: '🐻', hp: 80, str: 18, dex: 6, gold: 10 },
+            boss_sheriff: { name: 'Corrupt Sheriff', icon: '👮', hp: 100, str: 14, dex: 12, gold: 100 },
+            boss_gang: { name: 'Gang Leader', icon: '💀', hp: 120, str: 16, dex: 14, gold: 150 }
+        };
+        
+        // DOM elements
+        const storyArea = document.getElementById('story-area');
+        const choicesArea = document.getElementById('choices-area');
+        const statsBar = document.getElementById('stats-bar');
+        const combatArea = document.getElementById('combat-area');
+        const inventoryEl = document.getElementById('inventory');
+        const gameOverEl = document.getElementById('game-over');
+        
+        // Initialize
+        function startGame() {
+            player = null;
+            currentScene = null;
+            gameDay = 1;
+            inCombat = false;
+            gameOverEl.classList.remove('visible', 'victory');
+            statsBar.classList.remove('visible');
+            combatArea.classList.remove('visible');
+            inventoryEl.classList.remove('visible');
+            showCharacterCreation();
+        }
+        
+        function showCharacterCreation() {
+            storyArea.innerHTML = `
+                <div id="char-create">
+                    <h2>🌅 CREATE YOUR CHARACTER 🌅</h2>
+                    <p class="narrator">The year is 1885. The frontier awaits...</p>
+                    <input type="text" id="char-name" placeholder="Enter your name" maxlength="12">
+                    <p class="narrator">Choose your path:</p>
+                    <div class="class-select">
+                        ${Object.entries(CLASSES).map(([key, c]) => `
+                            <div class="class-card" data-class="${key}">
+                                <div class="icon">${c.icon}</div>
+                                <div class="name">${c.name}</div>
+                                <div class="desc">${c.desc}</div>
+                                <div class="stats-preview">HP:${c.hp} STR:${c.str} DEX:${c.dex} LCK:${c.lck}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            choicesArea.innerHTML = '';
+            
+            // Add class selection listeners
+            document.querySelectorAll('.class-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                });
+            });
+            
+            // Add start button after a class is selected
+            setTimeout(() => {
+                choicesArea.innerHTML = `
+                    <button class="choice-btn" onclick="createCharacter()">
+                        <span class="key">[ENTER]</span> Begin Your Journey
+                    </button>
+                `;
+            }, 500);
+        }
+        
+        function createCharacter() {
+            const nameInput = document.getElementById('char-name');
+            const selectedClass = document.querySelector('.class-card.selected');
+            
+            if (!selectedClass) {
+                addStory('system', 'Choose a class first!');
+                return;
+            }
+            
+            const className = selectedClass.dataset.class;
+            const classData = CLASSES[className];
+            const name = nameInput.value.trim() || 'Stranger';
+            
+            player = {
+                name: name,
+                class: className,
+                classData: classData,
+                hp: classData.hp,
+                maxHp: classData.hp,
+                str: classData.str,
+                dex: classData.dex,
+                lck: classData.lck,
+                gold: 10,
+                inventory: [...classData.startItems],
+                reputation: 0,
+                kills: 0
+            };
+            
+            statsBar.classList.add('visible');
+            updateStats();
+            
+            showScene('intro');
+        }
+        
+        function updateStats() {
+            document.getElementById('hp').textContent = `${player.hp}/${player.maxHp}`;
+            document.getElementById('str').textContent = player.str;
+            document.getElementById('dex').textContent = player.dex;
+            document.getElementById('lck').textContent = player.lck;
+            document.getElementById('gold').textContent = player.gold;
+            document.getElementById('day').textContent = gameDay;
+        }
+        
+        function addStory(type, text) {
+            const p = document.createElement('p');
+            p.className = type;
+            p.innerHTML = text;
+            storyArea.appendChild(p);
+            storyArea.scrollTop = storyArea.scrollHeight;
+        }
+        
+        function clearStory() {
+            storyArea.innerHTML = '';
+        }
+        
+        function showChoices(choices) {
+            choicesArea.innerHTML = choices.map((c, i) => `
+                <button class="choice-btn" onclick="handleChoice('${c.action}')" ${c.disabled ? 'disabled' : ''}>
+                    <span class="key">[${i + 1}]</span> ${c.text}
+                </button>
+            `).join('');
+        }
+        
+        // Scenes
+        const SCENES = {
+            intro: {
+                text: () => `
+                    <p class="narrator">The stagecoach drops you at the edge of <span style="color:#ffcc00">DUSTY GULCH</span>, a town forgotten by civilization but not by trouble.</p>
+                    <p class="narrator">You're ${player.name}, a ${player.classData.name}. The wind carries whispers of gold, danger, and opportunity.</p>
+                    <p class="dialogue">"Welcome to Dusty Gulch, stranger. Watch your back."</p>
+                    <p class="narrator">The dusty main street stretches before you. A saloon, general store, and sheriff's office line the road.</p>
+                `,
+                choices: [
+                    { text: '🍺 Enter the Saloon', action: 'saloon' },
+                    { text: '🏪 Visit the General Store', action: 'store' },
+                    { text: '⭐ Go to the Sheriff\'s Office', action: 'sheriff' },
+                    { text: '🌵 Head out of town', action: 'wilderness' }
+                ]
+            },
+            saloon: {
+                text: () => `
+                    <p class="narrator">The saloon doors swing open. Piano music fills the smoky air. Cowboys eye you suspiciously.</p>
+                    <p class="narrator">The bartender polishes a glass. <span class="dialogue">"What'll it be, stranger?"</span></p>
+                    ${Math.random() < 0.3 ? `<p class="system">A rough-looking man in the corner stares at you menacingly...</p>` : ''}
+                `,
+                choices: () => {
+                    const choices = [
+                        { text: '🥃 Buy a drink ($5)', action: 'buy_drink', disabled: player.gold < 5 },
+                        { text: '🎰 Play poker ($10)', action: 'poker', disabled: player.gold < 10 },
+                        { text: '👂 Listen to rumors', action: 'rumors' },
+                        { text: '🚪 Leave', action: 'intro' }
+                    ];
+                    if (Math.random() < 0.3) {
+                        choices.splice(2, 0, { text: '⚔️ Confront the stranger', action: 'bar_fight' });
+                    }
+                    return choices;
+                }
+            },
+            buy_drink: {
+                text: () => {
+                    player.gold -= 5;
+                    player.hp = Math.min(player.maxHp, player.hp + 10);
+                    updateStats();
+                    return `
+                        <p class="narrator">You slide 5 gold across the bar. The whiskey burns going down but warms your soul.</p>
+                        <p class="loot">+10 HP restored</p>
+                        <p class="dialogue">"You look like someone who can handle trouble,"</span> the bartender whispers. <span class="dialogue">"Word is, there's a bounty on Black Pete. $100 gold, dead or alive. He's holed up in the canyon east of here."</p>
+                    `;
+                },
+                choices: () => [
+                    { text: '🎰 Play poker ($10)', action: 'poker', disabled: player.gold < 10 },
+                    { text: '👂 Ask about Black Pete', action: 'bounty_info' },
+                    { text: '🚪 Leave the saloon', action: 'intro' }
+                ]
+            },
+            poker: {
+                text: () => {
+                    const roll = rollDice(20) + Math.floor(player.lck / 2);
+                    let result;
+                    if (roll >= 18) {
+                        player.gold += 30;
+                        result = `<p class="loot">🎉 JACKPOT! You clean out the table! +$30 gold!</p>`;
+                    } else if (roll >= 12) {
+                        player.gold += 10;
+                        result = `<p class="loot">You win the hand! +$10 gold</p>`;
+                    } else if (roll >= 6) {
+                        result = `<p class="narrator">You break even. The cards weren't with you today.</p>`;
+                        player.gold -= 10;
+                        player.gold += 10;
+                    } else {
+                        player.gold -= 10;
+                        result = `<p class="combat">Bad luck! You lose $10 gold.</p>`;
+                    }
+                    updateStats();
+                    return `
+                        <p class="narrator">You sit at the poker table. Cards are dealt...</p>
+                        <p class="system">🎲 Luck roll: ${roll}</p>
+                        ${result}
+                    `;
+                },
+                choices: () => [
+                    { text: '🎰 Play again ($10)', action: 'poker', disabled: player.gold < 10 },
+                    { text: '🚪 Leave the table', action: 'saloon' }
+                ]
+            },
+            rumors: {
+                text: () => {
+                    const rumors = [
+                        `"They say there's gold in Dead Man's Canyon, but nobody who goes there comes back..."`,
+                        `"The sheriff ain't what he seems. Heard he's in with the gang."`,
+                        `"A prospector found a huge nugget last week. He's staying at the inn, flashing it around like a fool."`,
+                        `"Wolves have been attacking travelers on the north road. Be careful out there."`,
+                        `"Black Pete's gang robbed the bank last month. $1000 still missing."`
+                    ];
+                    return `
+                        <p class="narrator">You lean against the bar, listening to the chatter...</p>
+                        <p class="dialogue">${rumors[Math.floor(Math.random() * rumors.length)]}</p>
+                    `;
+                },
+                choices: () => [
+                    { text: '👂 Listen more', action: 'rumors' },
+                    { text: '🍺 Buy a drink ($5)', action: 'buy_drink', disabled: player.gold < 5 },
+                    { text: '🚪 Leave', action: 'intro' }
+                ]
+            },
+            bar_fight: {
+                text: () => {
+                    startCombat('bandit');
+                    return `
+                        <p class="narrator">You approach the stranger. He stands, hand on his holster.</p>
+                        <p class="dialogue">"You got a problem, stranger?"</p>
+                        <p class="combat">⚔️ COMBAT INITIATED!</p>
+                    `;
+                },
+                choices: []
+            },
+            store: {
+                text: () => `
+                    <p class="narrator">The general store is cramped but well-stocked. An old man peers at you from behind the counter.</p>
+                    <p class="dialogue">"See anything you like? Fair prices, I promise."</p>
+                `,
+                choices: () => [
+                    { text: '🩹 Buy Bandage ($15)', action: 'buy_bandage', disabled: player.gold < 15 },
+                    { text: '🥃 Buy Whiskey ($10)', action: 'buy_whiskey', disabled: player.gold < 10 },
+                    { text: '🧨 Buy Dynamite ($25)', action: 'buy_dynamite', disabled: player.gold < 25 },
+                    { text: '💰 Sell items', action: 'sell_items' },
+                    { text: '🚪 Leave', action: 'intro' }
+                ]
+            },
+            buy_bandage: {
+                text: () => {
+                    player.gold -= 15;
+                    player.inventory.push('bandage');
+                    updateStats();
+                    return `<p class="loot">You purchased a Bandage! 🩹</p>`;
+                },
+                choices: [
+                    { text: '🛒 Buy more', action: 'store' },
+                    { text: '🚪 Leave', action: 'intro' }
+                ]
+            },
+            buy_whiskey: {
+                text: () => {
+                    player.gold -= 10;
+                    player.inventory.push('whiskey');
+                    updateStats();
+                    return `<p class="loot">You purchased Whiskey! 🥃</p>`;
+                },
+                choices: [
+                    { text: '🛒 Buy more', action: 'store' },
+                    { text: '🚪 Leave', action: 'intro' }
+                ]
+            },
+            buy_dynamite: {
+                text: () => {
+                    player.gold -= 25;
+                    player.inventory.push('dynamite');
+                    updateStats();
+                    return `<p class="loot">You purchased Dynamite! 🧨</p>`;
+                },
+                choices: [
+                    { text: '🛒 Buy more', action: 'store' },
+                    { text: '🚪 Leave', action: 'intro' }
+                ]
+            },
+            sheriff: {
+                text: () => {
+                    const hasBadge = player.inventory.includes('badge');
+                    return `
+                        <p class="narrator">The sheriff's office is quiet. Wanted posters line the walls.</p>
+                        ${hasBadge ? `<p class="narrator">The deputy recognizes your badge. <span class="dialogue">"A fellow lawman! Welcome!"</span></p>` : ''}
+                        <p class="narrator">BOUNTIES:</p>
+                        <p class="system">🎯 Black Pete - $100 (Dangerous outlaw)</p>
+                        <p class="system">🎯 Wolf Pack - $30 (Clear the north road)</p>
+                        <p class="system">🎯 Snake Nest - $20 (Desert cleanup)</p>
+                    `;
+                },
+                choices: [
+                    { text: '🎯 Hunt Black Pete', action: 'bounty_pete' },
+                    { text: '🐺 Hunt the Wolf Pack', action: 'bounty_wolves' },
+                    { text: '🐍 Clear the Snake Nest', action: 'bounty_snakes' },
+                    { text: '🚪 Leave', action: 'intro' }
+                ]
+            },
+            wilderness: {
+                text: () => {
+                    const encounter = Math.random();
+                    if (encounter < 0.3) {
+                        return `
+                            <p class="narrator">You venture into the dusty plains. The sun beats down mercilessly.</p>
+                            <p class="combat">🐺 A wild wolf appears!</p>
+                        `;
+                    } else if (encounter < 0.5) {
+                        const goldFound = rollDice(10) + player.lck;
+                        player.gold += goldFound;
+                        updateStats();
+                        return `
+                            <p class="narrator">You wander the wilderness and find an abandoned campsite.</p>
+                            <p class="loot">You found ${goldFound} gold in an old saddlebag!</p>
+                        `;
+                    } else {
+                        return `
+                            <p class="narrator">The wilderness stretches endlessly. Cacti dot the landscape.</p>
+                            <p class="narrator">In the distance, you see the canyon where Black Pete is said to hide...</p>
+                        `;
+                    }
+                },
+                choices: () => {
+                    if (Math.random() < 0.3) {
+                        startCombat('wolf');
+                        return [];
+                    }
+                    return [
+                        { text: '🏜️ Continue exploring', action: 'wilderness' },
+                        { text: '⛰️ Head to the canyon', action: 'canyon_entrance' },
+                        { text: '🏠 Return to town', action: 'intro' }
+                    ];
+                }
+            },
+            canyon_entrance: {
+                text: () => `
+                    <p class="narrator">The canyon walls rise high above you. This is outlaw territory.</p>
+                    <p class="narrator">You spot campfire smoke deeper in the canyon. Black Pete's hideout must be close.</p>
+                    <p class="system">⚠️ WARNING: Dangerous area ahead!</p>
+                `,
+                choices: () => [
+                    { text: '🔫 Storm the camp', action: 'pete_fight' },
+                    { text: '🤫 Sneak approach', action: 'pete_sneak' },
+                    { text: '🧨 Use dynamite (if you have it)', action: 'pete_dynamite', disabled: !player.inventory.includes('dynamite') },
+                    { text: '🏃 Retreat', action: 'wilderness' }
+                ]
+            },
+            pete_fight: {
+                text: () => {
+                    startCombat('boss_gang');
+                    return `
+                        <p class="narrator">You charge into the camp, guns blazing!</p>
+                        <p class="dialogue">"Who dares?!"</p> Black Pete draws his weapon.
+                        <p class="combat">⚔️ BOSS BATTLE: BLACK PETE!</p>
+                    `;
+                },
+                choices: []
+            },
+            pete_sneak: {
+                text: () => {
+                    const roll = rollDice(20) + Math.floor(player.dex / 2);
+                    if (roll >= 15) {
+                        player.gold += 50;
+                        updateStats();
+                        return `
+                            <p class="narrator">You slip through the shadows like a ghost...</p>
+                            <p class="system">🎲 Sneak roll: ${roll} - SUCCESS!</p>
+                            <p class="loot">You found Pete's stash! +$50 gold!</p>
+                            <p class="narrator">But Pete spots you as you leave!</p>
+                        `;
+                    } else {
+                        return `
+                            <p class="narrator">You try to sneak but step on a twig...</p>
+                            <p class="system">🎲 Sneak roll: ${roll} - FAILED!</p>
+                            <p class="combat">You've been spotted!</p>
+                        `;
+                    }
+                },
+                choices: () => {
+                    startCombat('boss_gang');
+                    return [];
+                }
+            },
+            pete_dynamite: {
+                text: () => {
+                    player.inventory = player.inventory.filter(i => i !== 'dynamite');
+                    currentEnemy = {...ENEMY_TYPES.boss_gang};
+                    currentEnemy.hp -= 40;
+                    return `
+                        <p class="narrator">You light the dynamite and hurl it into the camp!</p>
+                        <p class="combat">💥 BOOM! The explosion rocks the canyon!</p>
+                        <p class="loot">Black Pete takes 40 damage!</p>
+                        <p class="narrator">Wounded but alive, Pete emerges from the smoke...</p>
+                    `;
+                },
+                choices: () => {
+                    startCombat('boss_gang', currentEnemy);
+                    return [];
+                }
+            },
+            bounty_wolves: {
+                text: () => {
+                    startCombat('wolf');
+                    return `
+                        <p class="narrator">You track the wolf pack to the north road...</p>
+                        <p class="combat">🐺 The alpha wolf attacks!</p>
+                    `;
+                },
+                choices: []
+            },
+            bounty_snakes: {
+                text: () => {
+                    startCombat('snake');
+                    return `
+                        <p class="narrator">You find the snake nest in the desert rocks...</p>
+                        <p class="combat">🐍 A rattlesnake strikes!</p>
+                    `;
+                },
+                choices: []
+            },
+            victory: {
+                text: () => `
+                    <p class="narrator">🏆 VICTORY!</p>
+                    <p class="narrator">Your name echoes through the frontier. ${player.name} the ${player.classData.name} - a legend of the West!</p>
+                `,
+                choices: []
+            }
+        };
+        
+        function showScene(sceneName) {
+            currentScene = sceneName;
+            const scene = SCENES[sceneName];
+            if (!scene) {
+                console.error('Unknown scene:', sceneName);
+                return;
+            }
+            
+            clearStory();
+            const text = typeof scene.text === 'function' ? scene.text() : scene.text;
+            storyArea.innerHTML = text;
+            
+            if (!inCombat) {
+                const choices = typeof scene.choices === 'function' ? scene.choices() : scene.choices;
+                if (choices && choices.length > 0) {
+                    showChoices(choices);
+                }
+            }
+        }
+        
+        function handleChoice(action) {
+            if (SCENES[action]) {
+                showScene(action);
+            }
+        }
+        
+        // Combat system
+        function rollDice(sides) {
+            return Math.floor(Math.random() * sides) + 1;
+        }
+        
+        function startCombat(enemyType, existingEnemy = null) {
+            inCombat = true;
+            currentEnemy = existingEnemy || {...ENEMY_TYPES[enemyType]};
+            currentEnemy.maxHp = currentEnemy.maxHp || currentEnemy.hp;
+            
+            combatArea.classList.add('visible');
+            document.getElementById('player-name').textContent = player.name;
+            document.getElementById('enemy-name').textContent = currentEnemy.name + ' ' + currentEnemy.icon;
+            
+            updateCombatUI();
+            document.getElementById('combat-log').innerHTML = '';
+            
+            showCombatChoices();
+        }
+        
+        function updateCombatUI() {
+            const playerHpPct = (player.hp / player.maxHp) * 100;
+            const enemyHpPct = (currentEnemy.hp / currentEnemy.maxHp) * 100;
+            
+            document.getElementById('player-hp-bar').style.width = playerHpPct + '%';
+            document.getElementById('enemy-hp-bar').style.width = enemyHpPct + '%';
+            document.getElementById('player-hp-text').textContent = player.hp;
+            document.getElementById('enemy-hp-text').textContent = currentEnemy.hp;
+            updateStats();
+        }
+        
+        function addCombatLog(text, type = '') {
+            const log = document.getElementById('combat-log');
+            const p = document.createElement('p');
+            p.className = type;
+            p.innerHTML = text;
+            log.appendChild(p);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function showCombatChoices() {
+            const hasBandage = player.inventory.includes('bandage');
+            const hasWhiskey = player.inventory.includes('whiskey');
+            const hasDynamite = player.inventory.includes('dynamite');
+            
+            const choices = [
+                { text: '⚔️ Attack', action: 'combat_attack' },
+                { text: '🛡️ Defend', action: 'combat_defend' }
+            ];
+            
+            if (hasBandage) choices.push({ text: '🩹 Use Bandage', action: 'combat_bandage' });
+            if (hasWhiskey) choices.push({ text: '🥃 Drink Whiskey', action: 'combat_whiskey' });
+            if (hasDynamite) choices.push({ text: '🧨 Throw Dynamite', action: 'combat_dynamite' });
+            
+            showChoices(choices);
+        }
+        
+        function playerAttack() {
+            const weapon = player.inventory.find(i => ITEMS[i]?.type === 'weapon');
+            const weaponDamage = weapon ? ITEMS[weapon].damage : 5;
+            
+            const hitRoll = rollDice(20) + Math.floor(player.dex / 3);
+            const critRoll = rollDice(20);
+            const isCrit = critRoll >= 18;
+            
+            if (hitRoll >= 8) {
+                let damage = weaponDamage + Math.floor(player.str / 2) + rollDice(6);
+                if (isCrit) damage *= 2;
+                
+                currentEnemy.hp -= damage;
+                addCombatLog(`🎲 Hit roll: ${hitRoll} - HIT!${isCrit ? ' CRITICAL!' : ''}`, 'loot');
+                addCombatLog(`You deal <span class="dice-roll">${damage}</span> damage!`, 'combat');
+            } else {
+                addCombatLog(`🎲 Hit roll: ${hitRoll} - MISS!`, 'system');
+            }
+        }
+        
+        function enemyAttack(defended = false) {
+            const hitRoll = rollDice(20) + Math.floor(currentEnemy.dex / 3);
+            const playerDodge = rollDice(20) + Math.floor(player.dex / 3);
+            
+            if (hitRoll > playerDodge) {
+                let damage = currentEnemy.str + rollDice(4);
+                if (defended) damage = Math.floor(damage / 2);
+                
+                player.hp -= damage;
+                addCombatLog(`${currentEnemy.icon} attacks! 🎲 ${hitRoll} vs ${playerDodge}`, 'system');
+                addCombatLog(`You take <span class="dice-roll">${damage}</span> damage!${defended ? ' (defended)' : ''}`, 'combat');
+            } else {
+                addCombatLog(`${currentEnemy.icon} attacks but you dodge! 🎲 ${hitRoll} vs ${playerDodge}`, 'loot');
+            }
+        }
+        
+        function combatTurn(action) {
+            switch(action) {
+                case 'combat_attack':
+                    playerAttack();
+                    if (currentEnemy.hp > 0) enemyAttack();
+                    break;
+                case 'combat_defend':
+                    addCombatLog('You brace for the attack...', 'system');
+                    enemyAttack(true);
+                    break;
+                case 'combat_bandage':
+                    player.inventory = player.inventory.filter(i => i !== 'bandage');
+                    player.hp = Math.min(player.maxHp, player.hp + 20);
+                    addCombatLog('🩹 You use a bandage! +20 HP', 'loot');
+                    enemyAttack();
+                    break;
+                case 'combat_whiskey':
+                    player.inventory = player.inventory.filter(i => i !== 'whiskey');
+                    player.hp = Math.min(player.maxHp, player.hp + 15);
+                    player.str += 2;
+                    addCombatLog('🥃 Whiskey! +15 HP, +2 STR!', 'loot');
+                    enemyAttack();
+                    break;
+                case 'combat_dynamite':
+                    player.inventory = player.inventory.filter(i => i !== 'dynamite');
+                    currentEnemy.hp -= 40;
+                    addCombatLog('🧨 BOOM! 40 damage!', 'combat');
+                    if (currentEnemy.hp > 0) enemyAttack();
+                    break;
+            }
+            
+            updateCombatUI();
+            
+            // Check victory/defeat
+            if (currentEnemy.hp <= 0) {
+                endCombat(true);
+            } else if (player.hp <= 0) {
+                endCombat(false);
+            } else {
+                showCombatChoices();
+            }
+        }
+        
+        function endCombat(victory) {
+            inCombat = false;
+            combatArea.classList.remove('visible');
+            
+            if (victory) {
+                player.kills++;
+                const goldEarned = currentEnemy.gold + rollDice(10);
+                player.gold += goldEarned;
+                updateStats();
+                
+                addStory('loot', `🏆 Victory! You defeated the ${currentEnemy.name}!`);
+                addStory('loot', `+${goldEarned} gold earned!`);
+                
+                // Check for boss victory
+                if (currentEnemy.name === 'Gang Leader') {
+                    player.gold += 100; // Bounty
+                    updateStats();
+                    addStory('loot', `💰 BOUNTY COLLECTED: +$100 gold!`);
+                    addStory('narrator', `Black Pete is defeated! You're a hero of Dusty Gulch!`);
+                    showGameOver(true);
+                    return;
+                }
+                
+                showChoices([
+                    { text: '🏠 Return to town', action: 'intro' },
+                    { text: '🏜️ Continue exploring', action: 'wilderness' }
+                ]);
+            } else {
+                showGameOver(false);
+            }
+        }
+        
+        function showGameOver(victory) {
+            gameOverEl.classList.add('visible');
+            if (victory) {
+                gameOverEl.classList.add('victory');
+                document.getElementById('go-title').textContent = '🏆 VICTORY!';
+                document.getElementById('go-message').textContent = `${player.name} the ${player.classData.name} has become a legend of the West!`;
+            } else {
+                document.getElementById('go-title').textContent = '💀 GAME OVER';
+                document.getElementById('go-message').textContent = `${player.name} met their end in the dusty frontier...`;
+            }
+            document.getElementById('go-stats').innerHTML = `
+                Gold: ${player.gold}<br>
+                Enemies Defeated: ${player.kills}<br>
+                Days Survived: ${gameDay}
+            `;
+        }
+        
+        // Handle choice for both story and combat
+        function handleChoice(action) {
+            if (action.startsWith('combat_')) {
+                combatTurn(action);
+            } else if (SCENES[action]) {
+                showScene(action);
+            }
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            const num = parseInt(e.key);
+            if (num >= 1 && num <= 9) {
+                const buttons = choicesArea.querySelectorAll('.choice-btn:not([disabled])');
+                if (buttons[num - 1]) {
+                    buttons[num - 1].click();
+                }
+            }
+        });
+        
+        // Start!
+        startGame();
+    </script>
+</body>
+</html>
