@@ -165,6 +165,30 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#010 Wanted Pairs', () => {
+    test('ゲームボードが表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/010-memory/`);
+      await page.waitForTimeout(500);
+      await expect(page.locator('h1')).toContainText('WANTED PAIRS');
+      await expect(page.locator('#board')).toBeVisible();
+    });
+
+    test('カードがクリックできる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/010-memory/`);
+      await page.waitForTimeout(500);
+      // Click first card
+      await page.click('.card:first-child');
+      await expect(page.locator('.card:first-child')).toHaveClass(/flipped/);
+    });
+
+    test('難易度を変更できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/010-memory/`);
+      await page.waitForTimeout(500);
+      await page.click('.diff-btn[data-size="6"]');
+      await expect(page.locator('.diff-btn[data-size="6"]')).toHaveClass(/active/);
+    });
+  });
+
   test.describe('#009 Dusty Trails', () => {
     test('キャラクター作成画面が表示される', async ({ page }) => {
       await page.goto(`${BASE_URL}/009-trpg/`);

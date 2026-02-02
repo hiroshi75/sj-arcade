@@ -141,6 +141,22 @@ Stranger Things風の80年代アメリカ田舎町アドベンチャー
 ![Dusty Trails](screenshots/dusty-trails.png)
 *THE FRONTIER AWAITS...*
 
+---
+
+### #010 - Wanted Pairs 🎴🤠
+西部テーマの神経衰弱ゲーム
+
+**特徴:**
+- カードをめくってペアを探せ！
+- 西部アイコン（🤠🐴🌵💰🔫など）
+- 2つの難易度（4x4 Easy / 6x4 Hard）
+- タイマー＆ムーブカウンター
+- ベストタイム保存
+- ⭐評価システム
+
+![Wanted Pairs](screenshots/wanted-pairs.png)
+*MATCH THE WESTERN ICONS!*
+
 ## 🚀 How to Play
 
 ```bash

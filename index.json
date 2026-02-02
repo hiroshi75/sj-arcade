@@ -74,6 +74,14 @@
       "created": "2026-02-02T18:30:00+08:00",
       "path": "009-trpg/",
       "tags": ["rpg", "text-adventure", "western", "turn-based"]
+    },
+    {
+      "id": "010",
+      "name": "Wanted Pairs",
+      "description": "西部テーマの神経衰弱！カードをめくってペアを見つけろ。カウボーイ、馬、サボテン、金塊...西部のアイコンを全部マッチさせよう！",
+      "created": "2026-02-02T18:49:00+08:00",
+      "path": "010-memory/",
+      "tags": ["puzzle", "memory", "western", "cards"]
     }
   ]
 }
