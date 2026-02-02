@@ -58,6 +58,14 @@
       "path": "007-claude-game/",
       "tags": ["endless-runner", "arcade", "western", "horse-racing"],
       "generator": "Claude CLI"
+    },
+    {
+      "id": "008",
+      "name": "Quick Draw Showdown",
+      "description": "西部の決闘！「DRAW!」の合図で素早く撃て！早撃ちすぎると失格、遅いとやられる。10人の無法者を倒して最速のガンマンになれ！",
+      "created": "2026-02-02T17:49:00+08:00",
+      "path": "008-showdown/",
+      "tags": ["reaction", "arcade", "western", "duel"]
     }
   ]
 }

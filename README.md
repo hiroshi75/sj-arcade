@@ -109,6 +109,21 @@ Stranger Things風の80年代アメリカ田舎町アドベンチャー
 ![Dusty Trail Dash](screenshots/dusty-trail.png)
 *RIDE YOUR HORSE THROUGH THE DUSTY TRAIL!*
 
+---
+
+### #008 - Quick Draw Showdown 🔫🤠
+反射神経を競う西部の決闘ゲーム
+
+**特徴:**
+- 「DRAW!」の合図でクリック/スペース
+- 早撃ちしすぎると失格！
+- 敵は10ラウンドで徐々に速くなる
+- 反応速度をms単位で計測
+- ベストタイム保存機能
+
+![Quick Draw Showdown](screenshots/showdown.png)
+*THE FASTEST GUN IN THE WEST!*
+
 ## 🚀 How to Play
 
 ```bash

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Draw Showdown - Sheriff Jim's Retro Arcade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(180deg, #ff6b35 0%, #f7931e 30%, #c4a35a 60%, #8b7355 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background: linear-gradient(180deg, #87CEEB 0%, #f4a460 50%, #deb887 100%);
+            border: 6px solid #8B4513;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        /* Sun */
+        .sun {
+            position: absolute;
+            top: 30px;
+            right: 80px;
+            width: 80px;
+            height: 80px;
+            background: #FFD700;
+            border-radius: 50%;
+            box-shadow: 0 0 60px #FFD700;
+        }
+        /* Ground */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 200px;
+            background: #c4a35a;
+        }
+        /* Buildings */
+        .building {
+            position: absolute;
+            bottom: 200px;
+            background: #8B4513;
+            border: 3px solid #654321;
+        }
+        .building.saloon {
+            left: 50px;
+            width: 150px;
+            height: 180px;
+        }
+        .building.bank {
+            right: 50px;
+            width: 150px;
+            height: 160px;
+        }
+        .building::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 80px solid transparent;
+            border-right: 80px solid transparent;
+            border-bottom: 40px solid #654321;
+        }
+        /* Cowboys */
+        .cowboy {
+            position: absolute;
+            bottom: 200px;
+            font-size: 80px;
+            transition: transform 0.1s;
+        }
+        .cowboy.player {
+            left: 250px;
+            transform: scaleX(-1);
+        }
+        .cowboy.enemy {
+            right: 250px;
+        }
+        .cowboy.shot {
+            animation: shot 0.3s ease-out;
+        }
+        @keyframes shot {
+            0% { transform: scaleX(-1) translateY(0); }
+            50% { transform: scaleX(-1) translateY(-20px) rotate(-10deg); }
+            100% { transform: scaleX(-1) translateY(0) rotate(0); opacity: 0.5; }
+        }
+        .cowboy.enemy.shot {
+            animation: enemyShot 0.3s ease-out;
+        }
+        @keyframes enemyShot {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+            100% { transform: translateY(0) rotate(0); opacity: 0.5; }
+        }
+        /* Muzzle flash */
+        .flash {
+            position: absolute;
+            font-size: 40px;
+            opacity: 0;
+            animation: flash 0.2s ease-out;
+        }
+        @keyframes flash {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(2); }
+        }
+        /* UI */
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            color: #8B4513;
+            font-size: 14px;
+            text-shadow: 1px 1px 0 #fff;
+            z-index: 100;
+        }
+        /* Center message */
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #8B0000;
+            text-shadow: 3px 3px 0 #000;
+            z-index: 100;
+        }
+        #message h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        #message p {
+            font-size: 14px;
+            color: #fff;
+            text-shadow: 2px 2px 0 #000;
+            margin: 10px 0;
+        }
+        #message .draw {
+            font-size: 72px;
+            color: #FF0000;
+            animation: pulse 0.1s infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: translate(-50%, -50%) scale(1); }
+            to { transform: translate(-50%, -50%) scale(1.1); }
+        }
+        #message .ready {
+            font-size: 36px;
+            color: #FFD700;
+        }
+        #message .result {
+            font-size: 24px;
+            margin-top: 30px;
+        }
+        #message .time {
+            font-size: 48px;
+            color: #00FF00;
+            margin: 20px 0;
+        }
+        #message .time.slow {
+            color: #FF6600;
+        }
+        #message .time.fail {
+            color: #FF0000;
+        }
+        /* Title screen */
+        #title-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        #title-screen h1 {
+            font-size: 32px;
+            color: #FFD700;
+            text-shadow: 4px 4px 0 #8B0000;
+            margin-bottom: 10px;
+        }
+        #title-screen h2 {
+            font-size: 24px;
+            color: #FF6600;
+            text-shadow: 3px 3px 0 #000;
+            margin-bottom: 40px;
+        }
+        #title-screen .cowboy-icon {
+            font-size: 100px;
+            margin: 20px 0;
+        }
+        #title-screen p {
+            color: #fff;
+            font-size: 10px;
+            margin: 8px 0;
+        }
+        .start-btn {
+            background: #8B0000;
+            color: #FFD700;
+            border: 4px solid #FFD700;
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: all 0.1s;
+        }
+        .start-btn:hover {
+            background: #FFD700;
+            color: #8B0000;
+            transform: scale(1.05);
+        }
+        /* Game over */
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        #game-over h1 {
+            font-size: 28px;
+            color: #FF0000;
+            text-shadow: 3px 3px 0 #000;
+            margin-bottom: 20px;
+        }
+        #game-over .stats {
+            color: #fff;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        #game-over .best {
+            color: #FFD700;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        /* Victory */
+        #victory {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        #victory h1 {
+            font-size: 24px;
+            color: #FFD700;
+            text-shadow: 3px 3px 0 #8B0000;
+            margin-bottom: 20px;
+        }
+        #victory .badge {
+            font-size: 80px;
+            margin: 20px 0;
+        }
+        #victory .stats {
+            color: #fff;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        .hidden { display: none !important; }
+        /* Tumbleweed decoration */
+        .tumbleweed {
+            position: absolute;
+            bottom: 210px;
+            font-size: 30px;
+            animation: roll 8s linear infinite;
+        }
+        @keyframes roll {
+            from { left: -50px; transform: rotate(0deg); }
+            to { left: 850px; transform: rotate(720deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="sun"></div>
+        <div class="building saloon"></div>
+        <div class="building bank"></div>
+        <div class="ground"></div>
+        <div class="tumbleweed">🌾</div>
+        
+        <div class="cowboy player">🤠</div>
+        <div class="cowboy enemy">🤠</div>
+        
+        <div id="hud">
+            <div>ROUND: <span id="round">1</span>/10</div>
+            <div>WINS: <span id="wins">0</span></div>
+            <div>BEST: <span id="best">---</span>ms</div>
+        </div>
+        
+        <div id="message"></div>
+        
+        <div id="title-screen">
+            <h1>QUICK DRAW</h1>
+            <h2>SHOWDOWN</h2>
+            <div class="cowboy-icon">🤠🔫</div>
+            <p>Wait for "DRAW!"</p>
+            <p>Then CLICK or press SPACE!</p>
+            <p>Fastest gun wins!</p>
+            <p>⚠️ Shoot early = disqualified!</p>
+            <button class="start-btn" onclick="startGame()">▶ DRAW!</button>
+        </div>
+        
+        <div id="game-over">
+            <h1>💀 YOU LOSE!</h1>
+            <div class="stats">Round: <span id="go-round">1</span></div>
+            <div class="stats">Your time: <span id="go-time">---</span>ms</div>
+            <div class="stats">Enemy time: <span id="go-enemy">---</span>ms</div>
+            <div class="best">Best streak: <span id="go-best">0</span> wins</div>
+            <button class="start-btn" onclick="startGame()">▶ TRY AGAIN</button>
+        </div>
+        
+        <div id="victory">
+            <h1>🏆 FASTEST GUN IN THE WEST!</h1>
+            <div class="badge">⭐</div>
+            <div class="stats">10 outlaws defeated!</div>
+            <div class="stats">Average time: <span id="v-avg">---</span>ms</div>
+            <div class="stats">Best time: <span id="v-best">---</span>ms</div>
+            <button class="start-btn" onclick="startGame()">▶ PLAY AGAIN</button>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        let round = 1;
+        let wins = 0;
+        let bestTime = localStorage.getItem('showdownBest') || null;
+        let bestStreak = localStorage.getItem('showdownStreak') || 0;
+        let times = [];
+        
+        // DOM elements
+        const message = document.getElementById('message');
+        const titleScreen = document.getElementById('title-screen');
+        const gameOver = document.getElementById('game-over');
+        const victory = document.getElementById('victory');
+        const roundEl = document.getElementById('round');
+        const winsEl = document.getElementById('wins');
+        const bestEl = document.getElementById('best');
+        const playerCowboy = document.querySelector('.cowboy.player');
+        const enemyCowboy = document.querySelector('.cowboy.enemy');
+        
+        // Game variables
+        let gameState = 'title'; // title, waiting, ready, draw, result
+        let drawTime = 0;
+        let canShoot = false;
+        let timeoutId = null;
+        
+        // Initialize
+        if (bestTime) {
+            bestEl.textContent = bestTime;
+        }
+        
+        function startGame() {
+            titleScreen.classList.add('hidden');
+            gameOver.style.display = 'none';
+            victory.style.display = 'none';
+            
+            round = 1;
+            wins = 0;
+            times = [];
+            updateHUD();
+            
+            startRound();
+        }
+        
+        function startRound() {
+            gameState = 'waiting';
+            canShoot = false;
+            playerCowboy.classList.remove('shot');
+            enemyCowboy.classList.remove('shot');
+            playerCowboy.style.opacity = 1;
+            enemyCowboy.style.opacity = 1;
+            
+            message.innerHTML = '<p class="ready">GET READY...</p>';
+            
+            // Random delay between 1.5 and 4 seconds
+            const delay = 1500 + Math.random() * 2500;
+            
+            timeoutId = setTimeout(() => {
+                gameState = 'draw';
+                canShoot = true;
+                drawTime = performance.now();
+                message.innerHTML = '<h1 class="draw">DRAW!</h1>';
+                
+                // Enemy reaction time (gets faster each round)
+                // Round 1: 400-600ms, Round 10: 150-250ms
+                const baseTime = 600 - (round - 1) * 40;
+                const variance = 200 - (round - 1) * 15;
+                const enemyTime = Math.max(150, baseTime - Math.random() * variance);
+                
+                timeoutId = setTimeout(() => {
+                    if (gameState === 'draw') {
+                        // Enemy shot first!
+                        enemyShot(enemyTime);
+                    }
+                }, enemyTime);
+                
+            }, delay);
+        }
+        
+        function playerShot() {
+            if (gameState === 'waiting') {
+                // Too early!
+                clearTimeout(timeoutId);
+                gameState = 'result';
+                
+                message.innerHTML = `
+                    <h1 style="color: #FF0000;">TOO EARLY!</h1>
+                    <p class="result">You shot before "DRAW!"</p>
+                    <p class="time fail">DISQUALIFIED</p>
+                `;
+                
+                playerCowboy.classList.add('shot');
+                
+                setTimeout(() => showGameOver('early', 0, 0), 2000);
+                return;
+            }
+            
+            if (gameState !== 'draw' || !canShoot) return;
+            
+            clearTimeout(timeoutId);
+            gameState = 'result';
+            canShoot = false;
+            
+            const reactionTime = Math.round(performance.now() - drawTime);
+            times.push(reactionTime);
+            
+            // Player wins this round!
+            createFlash(playerCowboy);
+            enemyCowboy.classList.add('shot');
+            
+            // Update best time
+            if (!bestTime || reactionTime < bestTime) {
+                bestTime = reactionTime;
+                localStorage.setItem('showdownBest', bestTime);
+                bestEl.textContent = bestTime;
+            }
+            
+            let timeClass = reactionTime < 300 ? '' : 'slow';
+            message.innerHTML = `
+                <h1 style="color: #00FF00;">🎯 BANG!</h1>
+                <p class="time ${timeClass}">${reactionTime}ms</p>
+                <p class="result">${getComment(reactionTime)}</p>
+            `;
+            
+            wins++;
+            updateHUD();
+            
+            setTimeout(() => {
+                if (round >= 10) {
+                    showVictory();
+                } else {
+                    round++;
+                    updateHUD();
+                    startRound();
+                }
+            }, 2000);
+        }
+        
+        function enemyShot(enemyTime) {
+            gameState = 'result';
+            canShoot = false;
+            
+            createFlash(enemyCowboy);
+            playerCowboy.classList.add('shot');
+            
+            message.innerHTML = `
+                <h1 style="color: #FF0000;">💀 BANG!</h1>
+                <p class="time fail">${Math.round(enemyTime)}ms</p>
+                <p class="result">The outlaw was faster!</p>
+            `;
+            
+            setTimeout(() => showGameOver('slow', 0, Math.round(enemyTime)), 2000);
+        }
+        
+        function createFlash(cowboy) {
+            const flash = document.createElement('div');
+            flash.className = 'flash';
+            flash.textContent = '💥';
+            flash.style.left = cowboy.offsetLeft + (cowboy === playerCowboy ? 60 : -20) + 'px';
+            flash.style.bottom = '260px';
+            document.getElementById('game-container').appendChild(flash);
+            setTimeout(() => flash.remove(), 200);
+        }
+        
+        function getComment(time) {
+            if (time < 200) return "⚡ LIGHTNING FAST!";
+            if (time < 300) return "🔥 Quick draw!";
+            if (time < 400) return "👍 Not bad, partner";
+            if (time < 500) return "😅 Close call...";
+            return "🐢 Barely made it!";
+        }
+        
+        function showGameOver(reason, playerTime, enemyTime) {
+            gameState = 'gameover';
+            gameOver.style.display = 'flex';
+            
+            document.getElementById('go-round').textContent = round;
+            document.getElementById('go-time').textContent = reason === 'early' ? 'N/A' : playerTime;
+            document.getElementById('go-enemy').textContent = enemyTime;
+            
+            if (wins > bestStreak) {
+                bestStreak = wins;
+                localStorage.setItem('showdownStreak', bestStreak);
+            }
+            document.getElementById('go-best').textContent = bestStreak;
+        }
+        
+        function showVictory() {
+            gameState = 'victory';
+            victory.style.display = 'flex';
+            
+            const avgTime = Math.round(times.reduce((a, b) => a + b, 0) / times.length);
+            const bestRoundTime = Math.min(...times);
+            
+            document.getElementById('v-avg').textContent = avgTime;
+            document.getElementById('v-best').textContent = bestRoundTime;
+            
+            if (wins > bestStreak) {
+                bestStreak = wins;
+                localStorage.setItem('showdownStreak', bestStreak);
+            }
+        }
+        
+        function updateHUD() {
+            roundEl.textContent = round;
+            winsEl.textContent = wins;
+        }
+        
+        // Input handlers
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('start-btn')) return;
+            if (gameState === 'waiting' || gameState === 'draw') {
+                playerShot();
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameState === 'title') {
+                    startGame();
+                } else if (gameState === 'waiting' || gameState === 'draw') {
+                    playerShot();
+                } else if (gameState === 'gameover' || gameState === 'victory') {
+                    startGame();
+                }
+            }
+        });
+        
+        // Touch support
+        document.getElementById('game-container').addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('start-btn')) return;
+            if (gameState === 'waiting' || gameState === 'draw') {
+                e.preventDefault();
+                playerShot();
+            }
+        });
+    </script>
+</body>
+</html>

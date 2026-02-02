@@ -165,6 +165,37 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#008 Quick Draw Showdown', () => {
+    test('タイトル画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/008-showdown/`);
+      await page.waitForTimeout(500);
+      await expect(page.locator('#title-screen')).toBeVisible();
+      await expect(page.locator('#title-screen h1')).toContainText('QUICK DRAW');
+    });
+
+    test('ゲームが開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/008-showdown/`);
+      await page.waitForTimeout(500);
+      await page.click('.start-btn');
+      await page.waitForTimeout(500);
+      // タイトル画面が消えることを確認
+      await expect(page.locator('#title-screen')).toHaveClass(/hidden/);
+      // HUDが表示されることを確認
+      await expect(page.locator('#hud')).toBeVisible();
+    });
+
+    test('スペースキーで撃てる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/008-showdown/`);
+      await page.waitForTimeout(500);
+      await page.click('.start-btn');
+      // Wait for "DRAW!" (max 5 seconds)
+      await page.waitForTimeout(5000);
+      await page.keyboard.press('Space');
+      // ゲームがクラッシュしていないことを確認
+      await expect(page.locator('#game-container')).toBeVisible();
+    });
+  });
+
   test.describe('#007 Dusty Trail Dash', () => {
     test('タイトル画面が表示される', async ({ page }) => {
       await page.goto(`${BASE_URL}/007-claude-game/`);
