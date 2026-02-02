@@ -907,24 +907,32 @@
                     
                     timeLeft--;
                     
-                    // Move monsters toward player
+                    // Move monsters toward player (use center points)
+                    const playerCenterX = playerX + 18;  // half of 36px emoji
+                    const playerCenterY = playerY + 18;
+                    
                     monsters.forEach(m => {
                         if (!m.alive) return;
-                        let dx = playerX - m.x;
-                        let dy = playerY - m.y;
+                        const monsterCenterX = m.x + 19;  // half of 38px emoji
+                        const monsterCenterY = m.y + 19;
+                        
+                        let dx = playerCenterX - monsterCenterX;
+                        let dy = playerCenterY - monsterCenterY;
                         let dist = Math.sqrt(dx*dx + dy*dy);
                         if (dist > 0) {
                             m.x += (dx / dist) * 2;
                             m.y += (dy / dist) * 2;
                         }
                         
-                        // Recalculate distance AFTER movement for accurate collision
-                        dx = playerX - m.x;
-                        dy = playerY - m.y;
+                        // Recalculate center distance AFTER movement
+                        const newMonsterCenterX = m.x + 19;
+                        const newMonsterCenterY = m.y + 19;
+                        dx = playerCenterX - newMonsterCenterX;
+                        dy = playerCenterY - newMonsterCenterY;
                         dist = Math.sqrt(dx*dx + dy*dy);
                         
-                        // Check collision with player (tighter hitbox, respect invincibility)
-                        if (dist < 18 && !state.invincible) {
+                        // Check collision - very tight hitbox (centers must be within 22px)
+                        if (dist < 22 && !state.invincible) {
                             state.health -= 25;
                             playLose();
                             
@@ -991,11 +999,15 @@
                         case ' ':
                         case 'x':
                         case 'X':
-                            // Attack nearby monster
+                            // Attack nearby monster (use center points)
+                            const atkCenterX = playerX + 18;
+                            const atkCenterY = playerY + 18;
                             monsters.forEach(m => {
                                 if (!m.alive) return;
-                                const dist = Math.sqrt((playerX-m.x)**2 + (playerY-m.y)**2);
-                                if (dist < 60) {
+                                const mCenterX = m.x + 19;
+                                const mCenterY = m.y + 19;
+                                const dist = Math.sqrt((atkCenterX-mCenterX)**2 + (atkCenterY-mCenterY)**2);
+                                if (dist < 70) {
                                     m.alive = false;
                                     huntScore++;
                                     playWin();
