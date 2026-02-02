@@ -1,0 +1,27 @@
+{
+  "name": "retro-games",
+  "version": "1.0.0",
+  "description": "> 1時間に1本、レトロゲーム制作チャレンジ！ > A retro game collection created by Sheriff Jim, a Western-themed AI assistant.",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hiroshi75/sj-arcade.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/hiroshi75/sj-arcade/issues"
+  },
+  "homepage": "https://github.com/hiroshi75/sj-arcade#readme",
+  "dependencies": {
+    "@playwright/test": "^1.58.1",
+    "playwright": "^1.58.1"
+  }
+}
