@@ -44,10 +44,27 @@
             border-bottom: 2px solid #33ff33;
             padding-bottom: 15px;
             margin-bottom: 20px;
+            position: relative;
         }
         header h1 {
             font-size: 24px;
             color: #ffcc00;
+        }
+        #lang-toggle {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #1a1a1a;
+            border: 2px solid #33ff33;
+            color: #33ff33;
+            padding: 5px 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            cursor: pointer;
+        }
+        #lang-toggle:hover {
+            background: #33ff33;
+            color: #0a0a0a;
             text-shadow: 2px 2px #8B4513;
             margin-bottom: 5px;
         }
@@ -278,8 +295,9 @@
 <body>
     <div id="game-container">
         <header>
+            <button id="lang-toggle" onclick="toggleLang()">🇯🇵 JP</button>
             <h1>🌵 DUSTY TRAILS 🌵</h1>
-            <div class="subtitle">A Western Text Adventure</div>
+            <div class="subtitle" id="subtitle">A Western Text Adventure</div>
         </header>
         
         <div id="stats-bar">
@@ -397,6 +415,102 @@
             }
         }
         
+        // Language system
+        let lang = localStorage.getItem('dustyTrails_lang') || 'en';
+        
+        const TEXTS = {
+            en: {
+                subtitle: 'A Western Text Adventure',
+                createChar: '🌅 CREATE YOUR CHARACTER 🌅',
+                yearIs: 'The year is 1885. The frontier awaits...',
+                enterName: 'Enter your name',
+                choosePath: 'Choose your path:',
+                beginJourney: 'Begin Your Journey',
+                introText: (name, className) => `The stagecoach drops you at the edge of <span style="color:#ffcc00">DUSTY GULCH</span>, a town forgotten by civilization but not by trouble. You're ${name}, a ${className}. The wind carries whispers of gold, danger, and opportunity.`,
+                welcome: '"Welcome to Dusty Gulch, stranger. Watch your back."',
+                mainStreet: 'The dusty main street stretches before you. A saloon, general store, and sheriff\'s office line the road.',
+                saloon: 'Enter the Saloon',
+                store: 'Visit the General Store',
+                sheriff: 'Go to the Sheriff\'s Office',
+                wilderness: 'Head out of town',
+                saloonEnter: 'The saloon doors swing open. Piano music fills the smoky air. Cowboys eye you suspiciously.',
+                bartender: '"What\'ll it be, stranger?"',
+                buyDrink: 'Buy a drink ($5)',
+                playPoker: 'Play poker ($10)',
+                listenRumors: 'Listen to rumors',
+                leave: 'Leave',
+                victory: '🏆 Victory!',
+                defeated: 'You defeated the',
+                goldEarned: 'gold earned!',
+                returnTown: 'Return to town',
+                continueExplore: 'Continue exploring',
+                endingTitle: '🌅 THE END 🌅',
+                endingText: (name) => `The dust settles over the canyon. Black Pete lies defeated at your feet. Word of your victory spreads like wildfire across the frontier. When you return to Dusty Gulch, the townsfolk gather in the streets.`,
+                endingCheers: (name) => `"Three cheers for ${name}!" the crowd roars.`,
+                endingMayor: '"This town owes you everything. From this day forward, you are the true law of Dusty Gulch."',
+                legendWest: '🏆 YOU ARE NOW A LEGEND OF THE WEST! 🏆',
+                finalStats: 'Final Stats:',
+                remember: 'The frontier will remember your name forever...'
+            },
+            jp: {
+                subtitle: '西部テキストアドベンチャー',
+                createChar: '🌅 キャラクター作成 🌅',
+                yearIs: '1885年。フロンティアが待っている...',
+                enterName: '名前を入力',
+                choosePath: '道を選べ:',
+                beginJourney: '冒険を始める',
+                introText: (name, className) => `駅馬車が<span style="color:#ffcc00">DUSTY GULCH</span>の町はずれに到着した。文明に忘れ去られ、しかしトラブルには忘れられていない町だ。君は${name}、${className}だ。風は金、危険、そしてチャンスの噂を運んでくる。`,
+                welcome: '「ようこそDusty Gulchへ、よそ者さん。背中に気をつけな」',
+                mainStreet: '埃っぽいメインストリートが目の前に広がる。酒場、雑貨店、保安官事務所が道沿いに並んでいる。',
+                saloon: '🍺 酒場に入る',
+                store: '🏪 雑貨店に行く',
+                sheriff: '⭐ 保安官事務所に行く',
+                wilderness: '🌵 町を出る',
+                saloonEnter: '酒場の扉が開く。ピアノの音が煙たい空気に響く。カウボーイたちが怪しげな目で君を見る。',
+                bartender: '「何にする、よそ者さん？」',
+                buyDrink: '🥃 酒を買う ($5)',
+                playPoker: '🎰 ポーカーをする ($10)',
+                listenRumors: '👂 噂を聞く',
+                leave: '🚪 出る',
+                victory: '🏆 勝利！',
+                defeated: 'を倒した！',
+                goldEarned: 'ゴールド獲得！',
+                returnTown: '🏠 町に戻る',
+                continueExplore: '🏜️ 探索を続ける',
+                endingTitle: '🌅 終幕 🌅',
+                endingText: (name) => `峡谷に砂埃が舞い落ちる。Black Peteは君の足元に倒れている。君の勝利の知らせは、野火のようにフロンティア中に広がった。Dusty Gulchに戻ると、町の人々が通りに集まっていた。`,
+                endingCheers: (name) => `「${name}に乾杯！」群衆が叫ぶ。`,
+                endingMayor: '「この町は君に全てを借りがある。今日からあなたこそがDusty Gulchの真の法だ」',
+                legendWest: '🏆 君は西部の伝説となった！ 🏆',
+                finalStats: '最終ステータス:',
+                remember: 'フロンティアは君の名前を永遠に記憶するだろう...'
+            }
+        };
+        
+        function T(key, ...args) {
+            const text = TEXTS[lang][key];
+            return typeof text === 'function' ? text(...args) : text;
+        }
+        
+        function toggleLang() {
+            lang = lang === 'en' ? 'jp' : 'en';
+            localStorage.setItem('dustyTrails_lang', lang);
+            document.getElementById('lang-toggle').textContent = lang === 'en' ? '🇯🇵 JP' : '🇺🇸 EN';
+            document.getElementById('subtitle').textContent = T('subtitle');
+            // Refresh current scene if in game
+            if (currentScene && player) {
+                showScene(currentScene);
+            } else if (!player) {
+                showCharacterCreation();
+            }
+        }
+        
+        // Initialize language button
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('lang-toggle').textContent = lang === 'en' ? '🇯🇵 JP' : '🇺🇸 EN';
+            document.getElementById('subtitle').textContent = T('subtitle');
+        });
+        
         // Game state
         let player = null;
         let currentScene = null;
@@ -496,10 +610,10 @@
         function showCharacterCreation() {
             storyArea.innerHTML = `
                 <div id="char-create">
-                    <h2>🌅 CREATE YOUR CHARACTER 🌅</h2>
-                    <p class="narrator">The year is 1885. The frontier awaits...</p>
-                    <input type="text" id="char-name" placeholder="Enter your name" maxlength="12">
-                    <p class="narrator">Choose your path:</p>
+                    <h2>${T('createChar')}</h2>
+                    <p class="narrator">${T('yearIs')}</p>
+                    <input type="text" id="char-name" placeholder="${T('enterName')}" maxlength="12">
+                    <p class="narrator">${T('choosePath')}</p>
                     <div class="class-select">
                         ${Object.entries(CLASSES).map(([key, c]) => `
                             <div class="class-card" data-class="${key}">
@@ -527,7 +641,7 @@
             setTimeout(() => {
                 choicesArea.innerHTML = `
                     <button class="choice-btn" onclick="createCharacter()">
-                        <span class="key">[ENTER]</span> Begin Your Journey
+                        <span class="key">[ENTER]</span> ${T('beginJourney')}
                     </button>
                 `;
             }, 500);
@@ -608,29 +722,28 @@
         const SCENES = {
             intro: {
                 text: () => `
-                    <p class="narrator">The stagecoach drops you at the edge of <span style="color:#ffcc00">DUSTY GULCH</span>, a town forgotten by civilization but not by trouble.</p>
-                    <p class="narrator">You're ${player.name}, a ${player.classData.name}. The wind carries whispers of gold, danger, and opportunity.</p>
-                    <p class="dialogue">"Welcome to Dusty Gulch, stranger. Watch your back."</p>
-                    <p class="narrator">The dusty main street stretches before you. A saloon, general store, and sheriff's office line the road.</p>
+                    <p class="narrator">${T('introText', player.name, player.classData.name)}</p>
+                    <p class="dialogue">${T('welcome')}</p>
+                    <p class="narrator">${T('mainStreet')}</p>
                 `,
-                choices: [
-                    { text: '🍺 Enter the Saloon', action: 'saloon' },
-                    { text: '🏪 Visit the General Store', action: 'store' },
-                    { text: '⭐ Go to the Sheriff\'s Office', action: 'sheriff' },
-                    { text: '🌵 Head out of town', action: 'wilderness' }
+                choices: () => [
+                    { text: T('saloon'), action: 'saloon' },
+                    { text: T('store'), action: 'store' },
+                    { text: T('sheriff'), action: 'sheriff' },
+                    { text: T('wilderness'), action: 'wilderness' }
                 ]
             },
             saloon: {
                 text: () => `
-                    <p class="narrator">The saloon doors swing open. Piano music fills the smoky air. Cowboys eye you suspiciously.</p>
-                    <p class="narrator">The bartender polishes a glass. <span class="dialogue">"What'll it be, stranger?"</span></p>
-                    ${Math.random() < 0.3 ? `<p class="system">A rough-looking man in the corner stares at you menacingly...</p>` : ''}
+                    <p class="narrator">${T('saloonEnter')}</p>
+                    <p class="narrator"><span class="dialogue">${T('bartender')}</span></p>
+                    ${Math.random() < 0.3 ? `<p class="system">${lang === 'jp' ? '隅にいる荒くれ者が君を睨んでいる...' : 'A rough-looking man in the corner stares at you menacingly...'}</p>` : ''}
                 `,
                 choices: () => {
                     const choices = [
-                        { text: '🥃 Buy a drink ($5)', action: 'buy_drink', disabled: player.gold < 5 },
-                        { text: '🎰 Play poker ($10)', action: 'poker', disabled: player.gold < 10 },
-                        { text: '👂 Listen to rumors', action: 'rumors' },
+                        { text: T('buyDrink'), action: 'buy_drink', disabled: player.gold < 5 },
+                        { text: T('playPoker'), action: 'poker', disabled: player.gold < 10 },
+                        { text: T('listenRumors'), action: 'rumors' },
                         { text: '🚪 Leave', action: 'intro' }
                     ];
                     if (Math.random() < 0.3) {
@@ -918,24 +1031,21 @@
             },
             ending: {
                 text: () => `
-                    <p class="narrator">🌅 THE END 🌅</p>
-                    <p class="narrator">The dust settles over the canyon. Black Pete lies defeated at your feet.</p>
-                    <p class="dialogue">"You... you're faster than anyone I've ever seen,"</p> he gasps.
-                    <p class="narrator">Word of your victory spreads like wildfire across the frontier.</p>
-                    <p class="narrator">When you return to Dusty Gulch, the townsfolk gather in the streets.</p>
-                    <p class="dialogue">"Three cheers for ${player.name}!"</p> the crowd roars.
-                    <p class="narrator">The mayor steps forward with a golden sheriff's star.</p>
-                    <p class="dialogue">"This town owes you everything. From this day forward, you are the true law of Dusty Gulch."</p>
-                    <p class="loot">🏆 YOU ARE NOW A LEGEND OF THE WEST! 🏆</p>
-                    <p class="system">Final Stats:</p>
+                    <p class="narrator">${T('endingTitle')}</p>
+                    <p class="narrator">${T('endingText', player.name)}</p>
+                    <p class="dialogue">${lang === 'jp' ? '「お前は...今まで見た中で一番速い」' : '"You... you\'re faster than anyone I\'ve ever seen,"'}</p>
+                    <p class="dialogue">${T('endingCheers', player.name)}</p>
+                    <p class="dialogue">${T('endingMayor')}</p>
+                    <p class="loot">${T('legendWest')}</p>
+                    <p class="system">${T('finalStats')}</p>
                     <p class="system">💰 Gold: ${player.gold}</p>
-                    <p class="system">💀 Enemies Defeated: ${player.kills}</p>
-                    <p class="system">⭐ Reputation: ${player.reputation}</p>
-                    <p class="narrator">The frontier will remember your name forever...</p>
+                    <p class="system">💀 ${lang === 'jp' ? '倒した敵' : 'Enemies Defeated'}: ${player.kills}</p>
+                    <p class="system">⭐ ${lang === 'jp' ? '評判' : 'Reputation'}: ${player.reputation}</p>
+                    <p class="narrator">${T('remember')}</p>
                     <p class="narrator">${player.name} the ${player.classData.name}</p>
                 `,
                 choices: [
-                    { text: '🔄 Play Again', action: 'restart' }
+                    { text: lang === 'jp' ? '🔄 もう一度プレイ' : '🔄 Play Again', action: 'restart' }
                 ]
             },
             restart: {
