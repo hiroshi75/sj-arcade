@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Lasso Roundup 🤠</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a0a00;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Press Start 2P', cursive;
+      padding: 10px;
+    }
+    h1 {
+      color: #ffd700;
+      font-size: clamp(14px, 4vw, 24px);
+      text-align: center;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px #8b4513;
+    }
+    #game-container {
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 4 / 3;
+      position: relative;
+      background: linear-gradient(to bottom, #87ceeb 0%, #98d8c8 40%, #90ee90 40%, #228b22 100%);
+      border: 4px solid #8b4513;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      color: #fff;
+      font-size: clamp(8px, 2vw, 12px);
+      text-shadow: 1px 1px #000;
+      z-index: 10;
+    }
+    #start-screen, #game-over {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffd700;
+      text-align: center;
+      padding: 20px;
+      z-index: 20;
+    }
+    #game-over { display: none; }
+    .screen-title {
+      font-size: clamp(16px, 5vw, 28px);
+      margin-bottom: 20px;
+    }
+    .screen-text {
+      font-size: clamp(8px, 2.5vw, 12px);
+      color: #deb887;
+      margin: 5px 0;
+      line-height: 1.8;
+    }
+    .btn {
+      background: #8b4513;
+      color: #ffd700;
+      border: 3px solid #ffd700;
+      padding: 12px 24px;
+      font-family: inherit;
+      font-size: clamp(10px, 2.5vw, 14px);
+      cursor: pointer;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+    .btn:hover { background: #a0522d; }
+    #home-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #8b4513;
+      color: #ffd700;
+      border: 2px solid #ffd700;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: clamp(8px, 2vw, 10px);
+      cursor: pointer;
+      border-radius: 4px;
+      z-index: 30;
+      text-decoration: none;
+    }
+    #home-btn:hover { background: #a0522d; }
+    #final-score { color: #ffd700; font-size: clamp(12px, 3vw, 18px); margin: 10px 0; }
+    @media (max-width: 480px) {
+      body { padding: 5px; }
+      h1 { margin-bottom: 5px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>🤠 Lasso Roundup 🐄</h1>
+  <div id="game-container">
+    <a href="../" id="home-btn">🏠 HOME</a>
+    <div id="ui">
+      <span>🐄 <span id="caught">0</span>/<span id="total">0</span></span>
+      <span>⏱️ <span id="time">60</span>s</span>
+      <span>🏆 <span id="score">0</span></span>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div id="start-screen">
+      <div class="screen-title">🤠 LASSO ROUNDUP</div>
+      <p class="screen-text">🐄 Round up the cattle!</p>
+      <p class="screen-text">───────────</p>
+      <p class="screen-text">CLICK/TAP = Throw lasso</p>
+      <p class="screen-text">Catch cattle before time runs out!</p>
+      <p class="screen-text">───────────</p>
+      <p class="screen-text">🐄 Cow = 10 pts</p>
+      <p class="screen-text">⭐ Golden Calf = 50 pts</p>
+      <button class="btn" id="start-btn">🤠 ROUNDUP!</button>
+    </div>
+    <div id="game-over">
+      <div class="screen-title">🌅 ROUNDUP COMPLETE</div>
+      <p class="screen-text">Cattle caught: <span id="final-caught">0</span></p>
+      <p id="final-score">SCORE: 0</p>
+      <button class="btn" id="retry-btn">🤠 AGAIN!</button>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 600, H = 450;
+    canvas.width = W;
+    canvas.height = H;
+
+    let gameState = 'start';
+    let cowboy = { x: W/2, y: H - 60 };
+    let cattle = [];
+    let lasso = null;
+    let score = 0;
+    let caught = 0;
+    let totalSpawned = 0;
+    let timeLeft = 60;
+    let lastTime = 0;
+    let spawnTimer = 0;
+
+    function reset() {
+      cattle = [];
+      lasso = null;
+      score = 0;
+      caught = 0;
+      totalSpawned = 0;
+      timeLeft = 60;
+      spawnTimer = 0;
+      
+      // Spawn initial cattle
+      for (let i = 0; i < 5; i++) {
+        spawnCow();
+      }
+    }
+
+    function spawnCow() {
+      const side = Math.random() > 0.5 ? 'left' : 'right';
+      const isGolden = Math.random() < 0.1;
+      cattle.push({
+        x: side === 'left' ? -40 : W + 40,
+        y: 100 + Math.random() * (H - 250),
+        vx: (side === 'left' ? 1 : -1) * (1 + Math.random() * 2),
+        w: 50,
+        h: 35,
+        golden: isGolden,
+        caught: false,
+        frame: 0
+      });
+      totalSpawned++;
+    }
+
+    function throwLasso(targetX, targetY) {
+      if (lasso) return;
+      
+      const dx = targetX - cowboy.x;
+      const dy = targetY - cowboy.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const speed = 15;
+      
+      lasso = {
+        x: cowboy.x,
+        y: cowboy.y,
+        vx: (dx / dist) * speed,
+        vy: (dy / dist) * speed,
+        targetX,
+        targetY,
+        radius: 25,
+        trail: [],
+        returning: false
+      };
+    }
+
+    function update(dt) {
+      if (gameState !== 'playing') return;
+
+      // Timer
+      timeLeft -= dt;
+      if (timeLeft <= 0) {
+        timeLeft = 0;
+        gameOver();
+        return;
+      }
+
+      // Spawn cattle
+      spawnTimer += dt;
+      if (spawnTimer > 2 && cattle.filter(c => !c.caught).length < 8) {
+        spawnCow();
+        spawnTimer = 0;
+      }
+
+      // Update cattle
+      for (let cow of cattle) {
+        if (cow.caught) continue;
+        
+        cow.x += cow.vx;
+        cow.frame += 0.1;
+        
+        // Remove if off screen
+        if (cow.x < -100 || cow.x > W + 100) {
+          cow.remove = true;
+        }
+      }
+      cattle = cattle.filter(c => !c.remove);
+
+      // Update lasso
+      if (lasso) {
+        lasso.trail.push({ x: lasso.x, y: lasso.y });
+        if (lasso.trail.length > 15) lasso.trail.shift();
+
+        if (!lasso.returning) {
+          lasso.x += lasso.vx;
+          lasso.y += lasso.vy;
+
+          // Check for catch
+          for (let cow of cattle) {
+            if (cow.caught) continue;
+            const dx = lasso.x - (cow.x + cow.w/2);
+            const dy = lasso.y - (cow.y + cow.h/2);
+            if (Math.sqrt(dx*dx + dy*dy) < lasso.radius + 20) {
+              cow.caught = true;
+              caught++;
+              score += cow.golden ? 50 : 10;
+              lasso.returning = true;
+              break;
+            }
+          }
+
+          // Check if reached target or too far
+          const toDest = Math.sqrt(
+            Math.pow(lasso.x - lasso.targetX, 2) + 
+            Math.pow(lasso.y - lasso.targetY, 2)
+          );
+          if (toDest < 10 || lasso.x < 0 || lasso.x > W || lasso.y < 0) {
+            lasso.returning = true;
+          }
+        } else {
+          // Return to cowboy
+          const dx = cowboy.x - lasso.x;
+          const dy = cowboy.y - lasso.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 20) {
+            lasso = null;
+          } else {
+            lasso.x += (dx / dist) * 18;
+            lasso.y += (dy / dist) * 18;
+          }
+        }
+      }
+
+      // Move caught cattle toward corral
+      for (let cow of cattle) {
+        if (cow.caught) {
+          cow.x += (W - 80 - cow.x) * 0.05;
+          cow.y += (H - 80 - cow.y) * 0.05;
+        }
+      }
+
+      updateUI();
+    }
+
+    function gameOver() {
+      gameState = 'over';
+      document.getElementById('final-caught').textContent = caught;
+      document.getElementById('final-score').textContent = 'SCORE: ' + score;
+      document.getElementById('game-over').style.display = 'flex';
+    }
+
+    function draw() {
+      // Sky
+      ctx.fillStyle = '#87ceeb';
+      ctx.fillRect(0, 0, W, H * 0.4);
+
+      // Ground
+      const groundGrad = ctx.createLinearGradient(0, H * 0.4, 0, H);
+      groundGrad.addColorStop(0, '#90ee90');
+      groundGrad.addColorStop(1, '#228b22');
+      ctx.fillStyle = groundGrad;
+      ctx.fillRect(0, H * 0.4, W, H * 0.6);
+
+      // Fence (corral) 
+      ctx.strokeStyle = '#8b4513';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(W - 120, H - 120);
+      ctx.lineTo(W - 120, H - 40);
+      ctx.lineTo(W - 20, H - 40);
+      ctx.lineTo(W - 20, H - 120);
+      ctx.stroke();
+      
+      // Fence posts
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(W - 125, H - 130, 10, 100);
+      ctx.fillRect(W - 25, H - 130, 10, 100);
+
+      // Corral label
+      ctx.fillStyle = '#654321';
+      ctx.font = '8px "Press Start 2P"';
+      ctx.fillText('CORRAL', W - 105, H - 125);
+
+      // Draw cattle
+      for (let cow of cattle) {
+        drawCow(cow);
+      }
+
+      // Draw lasso
+      if (lasso) {
+        // Rope trail
+        ctx.strokeStyle = '#deb887';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cowboy.x, cowboy.y - 20);
+        for (let pt of lasso.trail) {
+          ctx.lineTo(pt.x, pt.y);
+        }
+        ctx.lineTo(lasso.x, lasso.y);
+        ctx.stroke();
+
+        // Lasso loop
+        ctx.strokeStyle = '#d2b48c';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(lasso.x, lasso.y, lasso.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Draw cowboy
+      drawCowboy();
+
+      // Clouds
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      for (let i = 0; i < 3; i++) {
+        const x = (i * 200 + Date.now() * 0.01) % (W + 100) - 50;
+        ctx.beginPath();
+        ctx.arc(x, 40 + i * 20, 25, 0, Math.PI * 2);
+        ctx.arc(x + 20, 35 + i * 20, 20, 0, Math.PI * 2);
+        ctx.arc(x + 40, 40 + i * 20, 22, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawCow(cow) {
+      const x = cow.x, y = cow.y;
+      const flip = cow.vx < 0 ? 1 : -1;
+      
+      ctx.save();
+      ctx.translate(x + cow.w/2, y + cow.h/2);
+      ctx.scale(flip, 1);
+      ctx.translate(-cow.w/2, -cow.h/2);
+
+      // Body
+      ctx.fillStyle = cow.golden ? '#ffd700' : '#f5f5f5';
+      ctx.fillRect(5, 8, 35, 22);
+
+      // Spots (if not golden)
+      if (!cow.golden) {
+        ctx.fillStyle = '#333';
+        ctx.beginPath();
+        ctx.ellipse(15, 15, 6, 4, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(30, 20, 5, 3, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Head
+      ctx.fillStyle = cow.golden ? '#ffd700' : '#f5f5f5';
+      ctx.fillRect(35, 5, 15, 15);
+
+      // Horns
+      ctx.fillStyle = cow.golden ? '#fff' : '#ddd';
+      ctx.fillRect(42, 0, 3, 6);
+      ctx.fillRect(48, 0, 3, 6);
+
+      // Eye
+      ctx.fillStyle = '#000';
+      ctx.fillRect(45, 9, 3, 3);
+
+      // Nose
+      ctx.fillStyle = '#ffc0cb';
+      ctx.fillRect(48, 14, 4, 4);
+
+      // Legs
+      ctx.fillStyle = cow.golden ? '#daa520' : '#ddd';
+      const legBob = Math.sin(cow.frame * 2) * 2;
+      ctx.fillRect(10, 28, 5, 10 + legBob);
+      ctx.fillRect(25, 28, 5, 10 - legBob);
+
+      // Tail
+      ctx.strokeStyle = cow.golden ? '#daa520' : '#333';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(5, 15);
+      ctx.quadraticCurveTo(-5, 20, -3, 28);
+      ctx.stroke();
+
+      // Star effect for golden
+      if (cow.golden) {
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px Arial';
+        ctx.fillText('⭐', 15, 5);
+      }
+
+      ctx.restore();
+    }
+
+    function drawCowboy() {
+      const x = cowboy.x, y = cowboy.y;
+
+      // Body
+      ctx.fillStyle = '#deb887';
+      ctx.fillRect(x - 8, y - 25, 16, 25);
+
+      // Head
+      ctx.fillStyle = '#ffdbac';
+      ctx.beginPath();
+      ctx.arc(x, y - 35, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hat
+      ctx.fillStyle = '#654321';
+      ctx.fillRect(x - 15, y - 50, 30, 6);
+      ctx.fillRect(x - 10, y - 60, 20, 12);
+
+      // Arms (throwing pose if lasso active)
+      ctx.fillStyle = '#deb887';
+      if (lasso) {
+        const angle = Math.atan2(lasso.y - y, lasso.x - x);
+        ctx.save();
+        ctx.translate(x, y - 20);
+        ctx.rotate(angle);
+        ctx.fillRect(0, -4, 25, 8);
+        ctx.restore();
+      } else {
+        ctx.fillRect(x - 18, y - 22, 8, 15);
+        ctx.fillRect(x + 10, y - 22, 8, 15);
+      }
+
+      // Legs
+      ctx.fillStyle = '#4169e1';
+      ctx.fillRect(x - 6, y, 5, 15);
+      ctx.fillRect(x + 1, y, 5, 15);
+
+      // Boots
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(x - 8, y + 13, 8, 5);
+      ctx.fillRect(x, y + 13, 8, 5);
+    }
+
+    function updateUI() {
+      document.getElementById('caught').textContent = caught;
+      document.getElementById('total').textContent = totalSpawned;
+      document.getElementById('time').textContent = Math.ceil(timeLeft);
+      document.getElementById('score').textContent = score;
+    }
+
+    function loop(timestamp) {
+      const dt = lastTime ? (timestamp - lastTime) / 1000 : 0;
+      lastTime = timestamp;
+      
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // Input
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const scaleY = H / rect.height;
+      if (e.touches) {
+        return {
+          x: (e.touches[0].clientX - rect.left) * scaleX,
+          y: (e.touches[0].clientY - rect.top) * scaleY
+        };
+      }
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+
+    canvas.addEventListener('click', e => {
+      if (gameState !== 'playing') return;
+      const pos = getPos(e);
+      throwLasso(pos.x, pos.y);
+    });
+
+    canvas.addEventListener('touchstart', e => {
+      if (gameState !== 'playing') return;
+      e.preventDefault();
+      const pos = getPos(e);
+      throwLasso(pos.x, pos.y);
+    });
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+      document.getElementById('start-screen').style.display = 'none';
+      gameState = 'playing';
+      reset();
+    });
+
+    document.getElementById('retry-btn').addEventListener('click', () => {
+      document.getElementById('game-over').style.display = 'none';
+      gameState = 'playing';
+      reset();
+    });
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

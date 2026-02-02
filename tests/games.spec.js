@@ -386,4 +386,26 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#015 Lasso Roundup', () => {
+    test('タイトル画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/015-lasso/`);
+      await expect(page.locator('#start-screen')).toBeVisible();
+      await expect(page.locator('#start-screen .screen-title')).toContainText('LASSO ROUNDUP');
+    });
+
+    test('ゲームが開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/015-lasso/`);
+      await page.click('#start-btn');
+      await expect(page.locator('#start-screen')).toBeHidden();
+    });
+
+    test('UIが表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/015-lasso/`);
+      await page.click('#start-btn');
+      await expect(page.locator('#caught')).toBeVisible();
+      await expect(page.locator('#time')).toBeVisible();
+      await expect(page.locator('#score')).toBeVisible();
+    });
+  });
+
 });
