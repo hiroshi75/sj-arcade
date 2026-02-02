@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Pony Express 📮</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a0a00;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Press Start 2P', cursive;
+      padding: 10px;
+    }
+    h1 {
+      color: #ffd700;
+      font-size: clamp(14px, 4vw, 24px);
+      text-align: center;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px #8b4513;
+    }
+    #game-container {
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 4 / 3;
+      position: relative;
+      background: linear-gradient(to bottom, #ff7f50 0%, #ffd700 30%, #deb887 30%, #8b4513 100%);
+      border: 4px solid #8b4513;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      color: #fff;
+      font-size: clamp(8px, 2vw, 12px);
+      text-shadow: 1px 1px #000;
+      z-index: 10;
+    }
+    #start-screen, #game-over {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffd700;
+      text-align: center;
+      padding: 20px;
+      z-index: 20;
+    }
+    #game-over { display: none; }
+    .screen-title {
+      font-size: clamp(16px, 5vw, 28px);
+      margin-bottom: 20px;
+    }
+    .screen-text {
+      font-size: clamp(8px, 2.5vw, 12px);
+      color: #deb887;
+      margin: 5px 0;
+      line-height: 1.8;
+    }
+    .btn {
+      background: #8b4513;
+      color: #ffd700;
+      border: 3px solid #ffd700;
+      padding: 12px 24px;
+      font-family: inherit;
+      font-size: clamp(10px, 2.5vw, 14px);
+      cursor: pointer;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+    .btn:hover { background: #a0522d; }
+    #home-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #8b4513;
+      color: #ffd700;
+      border: 2px solid #ffd700;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: clamp(8px, 2vw, 10px);
+      cursor: pointer;
+      border-radius: 4px;
+      z-index: 30;
+      text-decoration: none;
+    }
+    #home-btn:hover { background: #a0522d; }
+    #touch-zone {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      z-index: 5;
+    }
+    #final-score { color: #ffd700; font-size: clamp(12px, 3vw, 18px); }
+    #final-distance { color: #90ee90; }
+    @media (max-width: 480px) {
+      body { padding: 5px; }
+      h1 { margin-bottom: 5px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>🐴 Pony Express 📮</h1>
+  <div id="game-container">
+    <a href="../" id="home-btn">🏠 HOME</a>
+    <div id="ui">
+      <span>📮 <span id="mail">0</span></span>
+      <span>📏 <span id="distance">0</span>m</span>
+      <span>🏆 <span id="score">0</span></span>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div id="touch-zone"></div>
+    <div id="start-screen">
+      <div class="screen-title">📮 PONY EXPRESS</div>
+      <p class="screen-text">🐴 You are a Pony Express rider!</p>
+      <p class="screen-text">Deliver mail across the frontier</p>
+      <p class="screen-text">───────────</p>
+      <p class="screen-text">SPACE / TAP = Jump</p>
+      <p class="screen-text">Collect 📧 for bonus points</p>
+      <p class="screen-text">Avoid 🌵 🪨 obstacles!</p>
+      <button class="btn" id="start-btn">🐴 RIDE!</button>
+    </div>
+    <div id="game-over">
+      <div class="screen-title">💀 RIDE OVER</div>
+      <p class="screen-text">Distance: <span id="final-distance">0</span>m</p>
+      <p class="screen-text">Mail: <span id="final-mail">0</span> 📧</p>
+      <p id="final-score">SCORE: 0</p>
+      <button class="btn" id="retry-btn">🐴 RIDE AGAIN</button>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 600, H = 450;
+    canvas.width = W;
+    canvas.height = H;
+
+    const GROUND_Y = H - 80;
+    const GRAVITY = 0.6;
+    const JUMP_FORCE = -12;
+
+    let gameState = 'start';
+    let horse = { x: 80, y: GROUND_Y, vy: 0, w: 50, h: 40, jumping: false, frame: 0 };
+    let obstacles = [];
+    let mailItems = [];
+    let distance = 0;
+    let mail = 0;
+    let score = 0;
+    let speed = 5;
+    let spawnTimer = 0;
+    let animTimer = 0;
+
+    function reset() {
+      horse = { x: 80, y: GROUND_Y, vy: 0, w: 50, h: 40, jumping: false, frame: 0 };
+      obstacles = [];
+      mailItems = [];
+      distance = 0;
+      mail = 0;
+      score = 0;
+      speed = 5;
+      spawnTimer = 0;
+    }
+
+    function jump() {
+      if (!horse.jumping && horse.y >= GROUND_Y - 1) {
+        horse.vy = JUMP_FORCE;
+        horse.jumping = true;
+      }
+    }
+
+    function spawnObstacle() {
+      const types = ['cactus', 'rock', 'tumbleweed'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      let h = type === 'cactus' ? 40 : type === 'rock' ? 25 : 30;
+      let w = type === 'cactus' ? 25 : type === 'rock' ? 35 : 30;
+      obstacles.push({
+        x: W + 20,
+        y: GROUND_Y - h + 10,
+        w, h, type
+      });
+    }
+
+    function spawnMail() {
+      const yPos = GROUND_Y - 60 - Math.random() * 50;
+      mailItems.push({
+        x: W + 20,
+        y: yPos,
+        w: 25, h: 20
+      });
+    }
+
+    function update() {
+      if (gameState !== 'playing') return;
+
+      // Horse physics
+      horse.vy += GRAVITY;
+      horse.y += horse.vy;
+      if (horse.y >= GROUND_Y) {
+        horse.y = GROUND_Y;
+        horse.vy = 0;
+        horse.jumping = false;
+      }
+
+      // Animation
+      animTimer++;
+      if (animTimer % 8 === 0) horse.frame = (horse.frame + 1) % 2;
+
+      // Distance & speed
+      distance += speed * 0.1;
+      score = Math.floor(distance) + mail * 50;
+      speed = 5 + Math.floor(distance / 200) * 0.5;
+      if (speed > 12) speed = 12;
+
+      // Spawning
+      spawnTimer++;
+      if (spawnTimer > 60 + Math.random() * 40) {
+        spawnObstacle();
+        if (Math.random() > 0.5) spawnMail();
+        spawnTimer = 0;
+      }
+
+      // Move obstacles
+      for (let obs of obstacles) {
+        obs.x -= speed;
+      }
+      obstacles = obstacles.filter(o => o.x > -50);
+
+      // Move mail
+      for (let m of mailItems) {
+        m.x -= speed;
+      }
+      mailItems = mailItems.filter(m => m.x > -30);
+
+      // Collision with obstacles
+      for (let obs of obstacles) {
+        if (collide(horse, obs)) {
+          gameOver();
+          return;
+        }
+      }
+
+      // Collect mail
+      for (let i = mailItems.length - 1; i >= 0; i--) {
+        if (collide(horse, mailItems[i])) {
+          mail++;
+          mailItems.splice(i, 1);
+        }
+      }
+
+      updateUI();
+    }
+
+    function collide(a, b) {
+      const padding = 8;
+      return a.x + padding < b.x + b.w &&
+             a.x + a.w - padding > b.x &&
+             a.y + padding < b.y + b.h &&
+             a.y + a.h - padding > b.y;
+    }
+
+    function gameOver() {
+      gameState = 'over';
+      document.getElementById('final-distance').textContent = Math.floor(distance);
+      document.getElementById('final-mail').textContent = mail;
+      document.getElementById('final-score').textContent = 'SCORE: ' + score;
+      document.getElementById('game-over').style.display = 'flex';
+    }
+
+    function draw() {
+      // Sky gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+      skyGrad.addColorStop(0, '#ff7f50');
+      skyGrad.addColorStop(0.6, '#ffd700');
+      skyGrad.addColorStop(1, '#ffe4b5');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, GROUND_Y);
+
+      // Sun
+      ctx.fillStyle = '#fff5e0';
+      ctx.beginPath();
+      ctx.arc(W - 80, 60, 35, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mountains
+      ctx.fillStyle = '#cd853f';
+      ctx.beginPath();
+      ctx.moveTo(0, GROUND_Y);
+      ctx.lineTo(100, GROUND_Y - 80);
+      ctx.lineTo(200, GROUND_Y);
+      ctx.lineTo(280, GROUND_Y - 60);
+      ctx.lineTo(380, GROUND_Y);
+      ctx.lineTo(450, GROUND_Y - 90);
+      ctx.lineTo(550, GROUND_Y);
+      ctx.lineTo(W, GROUND_Y - 50);
+      ctx.lineTo(W, GROUND_Y);
+      ctx.fill();
+
+      // Ground
+      ctx.fillStyle = '#deb887';
+      ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+      ctx.fillStyle = '#d2b48c';
+      ctx.fillRect(0, GROUND_Y, W, 5);
+
+      // Road marks
+      ctx.fillStyle = '#c4a574';
+      for (let i = 0; i < 10; i++) {
+        const x = (i * 80 - (distance * 5) % 80) % W;
+        ctx.fillRect(x, GROUND_Y + 35, 40, 4);
+      }
+
+      // Obstacles
+      for (let obs of obstacles) {
+        if (obs.type === 'cactus') {
+          ctx.fillStyle = '#228b22';
+          ctx.fillRect(obs.x + 8, obs.y, 9, obs.h);
+          ctx.fillRect(obs.x, obs.y + 10, 25, 8);
+          ctx.fillRect(obs.x, obs.y + 5, 6, 15);
+          ctx.fillRect(obs.x + 19, obs.y + 5, 6, 15);
+        } else if (obs.type === 'rock') {
+          ctx.fillStyle = '#808080';
+          ctx.beginPath();
+          ctx.ellipse(obs.x + obs.w/2, obs.y + obs.h/2, obs.w/2, obs.h/2, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#696969';
+          ctx.beginPath();
+          ctx.ellipse(obs.x + obs.w/2 - 3, obs.y + obs.h/2 - 3, obs.w/3, obs.h/3, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Tumbleweed
+          ctx.strokeStyle = '#8b7355';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(obs.x + 15, obs.y + 15, 12, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(obs.x + 15, obs.y + 15, 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+
+      // Mail items
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = '#8b4513';
+      ctx.lineWidth = 2;
+      for (let m of mailItems) {
+        ctx.fillRect(m.x, m.y, m.w, m.h);
+        ctx.strokeRect(m.x, m.y, m.w, m.h);
+        ctx.fillStyle = '#8b4513';
+        ctx.font = '12px Arial';
+        ctx.fillText('📧', m.x + 4, m.y + 15);
+        ctx.fillStyle = '#fff';
+      }
+
+      // Horse and rider
+      drawHorse();
+    }
+
+    function drawHorse() {
+      const x = horse.x, y = horse.y;
+      const bob = horse.jumping ? 0 : (horse.frame * 3);
+
+      // Horse body
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(x + 5, y - 25 + bob, 35, 20);
+
+      // Horse head
+      ctx.fillRect(x + 35, y - 35 + bob, 15, 18);
+
+      // Horse legs
+      const legOffset = horse.jumping ? 5 : (horse.frame === 0 ? 0 : 5);
+      ctx.fillRect(x + 8, y - 5 + bob, 6, 15 - legOffset);
+      ctx.fillRect(x + 28, y - 5 + bob, 6, 15 - legOffset + (horse.frame * 3));
+
+      // Horse tail
+      ctx.fillStyle = '#4a2810';
+      ctx.fillRect(x, y - 20 + bob, 8, 12);
+
+      // Horse mane
+      ctx.fillRect(x + 30, y - 38 + bob, 8, 8);
+
+      // Rider body
+      ctx.fillStyle = '#deb887';
+      ctx.fillRect(x + 18, y - 45 + bob, 12, 18);
+
+      // Rider head
+      ctx.fillStyle = '#ffdbac';
+      ctx.beginPath();
+      ctx.arc(x + 24, y - 52 + bob, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cowboy hat
+      ctx.fillStyle = '#654321';
+      ctx.fillRect(x + 15, y - 62 + bob, 18, 5);
+      ctx.fillRect(x + 19, y - 68 + bob, 10, 7);
+
+      // Mail bag
+      ctx.fillStyle = '#8b0000';
+      ctx.fillRect(x + 30, y - 40 + bob, 10, 12);
+      ctx.fillStyle = '#ffd700';
+      ctx.font = '8px Arial';
+      ctx.fillText('📮', x + 31, y - 30 + bob);
+    }
+
+    function updateUI() {
+      document.getElementById('mail').textContent = mail;
+      document.getElementById('distance').textContent = Math.floor(distance);
+      document.getElementById('score').textContent = score;
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // Input
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (gameState === 'playing') jump();
+      }
+    });
+
+    document.getElementById('touch-zone').addEventListener('touchstart', e => {
+      e.preventDefault();
+      if (gameState === 'playing') jump();
+    });
+
+    document.getElementById('touch-zone').addEventListener('click', () => {
+      if (gameState === 'playing') jump();
+    });
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+      document.getElementById('start-screen').style.display = 'none';
+      gameState = 'playing';
+      reset();
+    });
+
+    document.getElementById('retry-btn').addEventListener('click', () => {
+      document.getElementById('game-over').style.display = 'none';
+      gameState = 'playing';
+      reset();
+    });
+
+    loop();
+  </script>
+</body>
+</html>

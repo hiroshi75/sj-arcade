@@ -342,4 +342,26 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#013 Pony Express', () => {
+    test('タイトル画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/013-pony-express/`);
+      await expect(page.locator('#start-screen')).toBeVisible();
+      await expect(page.locator('#start-screen .screen-title')).toContainText('PONY EXPRESS');
+    });
+
+    test('ゲームが開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/013-pony-express/`);
+      await page.click('#start-btn');
+      await expect(page.locator('#start-screen')).toBeHidden();
+    });
+
+    test('UIが表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/013-pony-express/`);
+      await page.click('#start-btn');
+      await expect(page.locator('#mail')).toBeVisible();
+      await expect(page.locator('#distance')).toBeVisible();
+      await expect(page.locator('#score')).toBeVisible();
+    });
+  });
+
 });
