@@ -255,10 +255,28 @@
             .btn { font-size: 10px; padding: 10px 20px; }
             #instructions { font-size: 6px; }
         }
+        /* Home button */
+        .home-btn {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(139, 69, 19, 0.9);
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 5px 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            cursor: pointer;
+            z-index: 200;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .home-btn:hover { background: #FFD700; color: #8B4513; }
     </style>
 </head>
 <body>
     <div id="game-container">
+        <a href="../" class="home-btn">🏠 HOME</a>
         <div class="ground"></div>
         <div class="target-zone zone-1"></div>
         <div class="target-zone zone-2"></div>

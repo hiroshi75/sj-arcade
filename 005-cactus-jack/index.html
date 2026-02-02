@@ -190,10 +190,28 @@
             #hud { font-size: 10px; padding: 0 10px; }
             .sun { width: 35px; height: 35px; top: 15px; right: 20px; }
         }
+        /* Home button */
+        .home-btn {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: rgba(139, 69, 19, 0.9);
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            padding: 5px 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            cursor: pointer;
+            z-index: 200;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .home-btn:hover { background: #FFD700; color: #8B4513; }
     </style>
 </head>
 <body>
     <div id="game-container">
+        <a href="../" class="home-btn">🏠 HOME</a>
         <div class="sun"></div>
         <canvas id="game-canvas" width="400" height="600"></canvas>
         <div id="hud" class="hidden">
