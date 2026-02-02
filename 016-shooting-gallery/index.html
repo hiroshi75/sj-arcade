@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Tin Can Alley 🎯</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a0a00;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Press Start 2P', cursive;
+      padding: 10px;
+    }
+    h1 {
+      color: #ffd700;
+      font-size: clamp(14px, 4vw, 24px);
+      text-align: center;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px #8b4513;
+    }
+    #game-container {
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 4 / 3;
+      position: relative;
+      background: linear-gradient(to bottom, #2f1810 0%, #4a2c17 50%, #654321 100%);
+      border: 4px solid #8b4513;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      color: #ffd700;
+      font-size: clamp(8px, 2vw, 12px);
+      text-shadow: 1px 1px #000;
+      z-index: 10;
+    }
+    #start-screen, #game-over {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffd700;
+      text-align: center;
+      padding: 20px;
+      z-index: 20;
+    }
+    #game-over { display: none; }
+    .screen-title {
+      font-size: clamp(16px, 5vw, 28px);
+      margin-bottom: 20px;
+    }
+    .screen-text {
+      font-size: clamp(8px, 2.5vw, 12px);
+      color: #deb887;
+      margin: 5px 0;
+      line-height: 1.8;
+    }
+    .btn {
+      background: #8b4513;
+      color: #ffd700;
+      border: 3px solid #ffd700;
+      padding: 12px 24px;
+      font-family: inherit;
+      font-size: clamp(10px, 2.5vw, 14px);
+      cursor: pointer;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+    .btn:hover { background: #a0522d; }
+    #home-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #8b4513;
+      color: #ffd700;
+      border: 2px solid #ffd700;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: clamp(8px, 2vw, 10px);
+      cursor: pointer;
+      border-radius: 4px;
+      z-index: 30;
+      text-decoration: none;
+    }
+    #home-btn:hover { background: #a0522d; }
+    #ammo-bar {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      display: flex;
+      gap: 5px;
+      z-index: 10;
+    }
+    .bullet {
+      width: 8px;
+      height: 20px;
+      background: linear-gradient(to bottom, #ffd700, #b8860b);
+      border-radius: 4px 4px 2px 2px;
+    }
+    .bullet.empty {
+      background: #333;
+    }
+    #final-score { color: #ffd700; font-size: clamp(12px, 3vw, 18px); margin: 10px 0; }
+    @media (max-width: 480px) {
+      body { padding: 5px; }
+      h1 { margin-bottom: 5px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 Tin Can Alley 🔫</h1>
+  <div id="game-container">
+    <a href="../" id="home-btn">🏠 HOME</a>
+    <div id="ui">
+      <span>🎯 <span id="hits">0</span></span>
+      <span>⏱️ <span id="time">45</span>s</span>
+      <span>🏆 <span id="score">0</span></span>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div id="ammo-bar"></div>
+    <div id="start-screen">
+      <div class="screen-title">🎯 TIN CAN ALLEY</div>
+      <p class="screen-text">🔫 Shootin' Gallery!</p>
+      <p class="screen-text">───────────</p>
+      <p class="screen-text">CLICK/TAP = Shoot</p>
+      <p class="screen-text">R = Reload (6 shots)</p>
+      <p class="screen-text">───────────</p>
+      <p class="screen-text">🥫 Can = 10 pts</p>
+      <p class="screen-text">🍾 Bottle = 20 pts</p>
+      <p class="screen-text">📜 Wanted = 50 pts</p>
+      <p class="screen-text">⭐ Sheriff Badge = 100 pts</p>
+      <button class="btn" id="start-btn">🔫 SHOOT!</button>
+    </div>
+    <div id="game-over">
+      <div class="screen-title">🌅 TIME'S UP!</div>
+      <p class="screen-text">Targets hit: <span id="final-hits">0</span></p>
+      <p class="screen-text">Accuracy: <span id="accuracy">0</span>%</p>
+      <p id="final-score">SCORE: 0</p>
+      <button class="btn" id="retry-btn">🔫 AGAIN!</button>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 600, H = 450;
+    canvas.width = W;
+    canvas.height = H;
+
+    const SHELF_Y = [120, 220, 320];
+    const MAX_AMMO = 6;
+
+    let gameState = 'start';
+    let targets = [];
+    let effects = [];
+    let score = 0;
+    let hits = 0;
+    let shots = 0;
+    let ammo = MAX_AMMO;
+    let timeLeft = 45;
+    let lastTime = 0;
+    let spawnTimer = 0;
+    let reloading = false;
+    let reloadTimer = 0;
+
+    const targetTypes = [
+      { type: 'can', w: 25, h: 35, points: 10, color: '#c0c0c0' },
+      { type: 'bottle', w: 20, h: 45, points: 20, color: '#228b22' },
+      { type: 'wanted', w: 40, h: 50, points: 50, color: '#deb887' },
+      { type: 'badge', w: 35, h: 35, points: 100, color: '#ffd700', rare: true }
+    ];
+
+    function reset() {
+      targets = [];
+      effects = [];
+      score = 0;
+      hits = 0;
+      shots = 0;
+      ammo = MAX_AMMO;
+      timeLeft = 45;
+      spawnTimer = 0;
+      reloading = false;
+      
+      // Initial targets
+      for (let i = 0; i < 8; i++) {
+        spawnTarget();
+      }
+      updateAmmoBar();
+    }
+
+    function spawnTarget() {
+      const shelfIdx = Math.floor(Math.random() * 3);
+      const typeIdx = Math.random() < 0.05 ? 3 : Math.floor(Math.random() * 3);
+      const type = targetTypes[typeIdx];
+      
+      const target = {
+        ...type,
+        x: 50 + Math.random() * (W - 100),
+        y: SHELF_Y[shelfIdx] - type.h,
+        shelfIdx,
+        hit: false,
+        fallSpeed: 0,
+        rotation: 0
+      };
+      
+      // Avoid overlapping
+      const overlap = targets.some(t => 
+        !t.hit && t.shelfIdx === shelfIdx && 
+        Math.abs(t.x - target.x) < 50
+      );
+      
+      if (!overlap) {
+        targets.push(target);
+      }
+    }
+
+    function shoot(x, y) {
+      if (gameState !== 'playing' || reloading) return;
+      if (ammo <= 0) {
+        // Click to reload when empty
+        reload();
+        return;
+      }
+
+      ammo--;
+      shots++;
+      updateAmmoBar();
+
+      // Muzzle flash effect
+      effects.push({
+        type: 'flash',
+        x, y,
+        life: 5
+      });
+
+      // Check hits (back to front for proper z-order)
+      let hitTarget = null;
+      for (let i = targets.length - 1; i >= 0; i--) {
+        const t = targets[i];
+        if (t.hit) continue;
+        
+        if (x >= t.x && x <= t.x + t.w &&
+            y >= t.y && y <= t.y + t.h) {
+          hitTarget = t;
+          break;
+        }
+      }
+
+      if (hitTarget) {
+        hitTarget.hit = true;
+        hitTarget.fallSpeed = 2;
+        hitTarget.rotation = (Math.random() - 0.5) * 0.3;
+        hits++;
+        score += hitTarget.points;
+
+        // Score popup
+        effects.push({
+          type: 'score',
+          x: hitTarget.x + hitTarget.w/2,
+          y: hitTarget.y,
+          text: '+' + hitTarget.points,
+          life: 30
+        });
+
+        // Spawn replacement after delay
+        setTimeout(() => {
+          if (gameState === 'playing') spawnTarget();
+        }, 500);
+      }
+    }
+
+    function reload() {
+      if (reloading || ammo === MAX_AMMO) return;
+      reloading = true;
+      reloadTimer = 1;
+    }
+
+    function update(dt) {
+      if (gameState !== 'playing') return;
+
+      // Timer
+      timeLeft -= dt;
+      if (timeLeft <= 0) {
+        timeLeft = 0;
+        gameOver();
+        return;
+      }
+
+      // Reload
+      if (reloading) {
+        reloadTimer -= dt;
+        if (reloadTimer <= 0) {
+          ammo = MAX_AMMO;
+          reloading = false;
+          updateAmmoBar();
+        }
+      }
+
+      // Spawn targets
+      spawnTimer += dt;
+      if (spawnTimer > 1.5 && targets.filter(t => !t.hit).length < 10) {
+        spawnTarget();
+        spawnTimer = 0;
+      }
+
+      // Update falling targets
+      for (let t of targets) {
+        if (t.hit) {
+          t.fallSpeed += 0.5;
+          t.y += t.fallSpeed;
+          t.rotation += t.rotation * 0.1;
+        }
+      }
+      targets = targets.filter(t => t.y < H + 50);
+
+      // Update effects
+      for (let e of effects) {
+        e.life--;
+        if (e.type === 'score') {
+          e.y -= 2;
+        }
+      }
+      effects = effects.filter(e => e.life > 0);
+
+      updateUI();
+    }
+
+    function gameOver() {
+      gameState = 'over';
+      const acc = shots > 0 ? Math.round((hits / shots) * 100) : 0;
+      document.getElementById('final-hits').textContent = hits;
+      document.getElementById('accuracy').textContent = acc;
+      document.getElementById('final-score').textContent = 'SCORE: ' + score;
+      document.getElementById('game-over').style.display = 'flex';
+    }
+
+    function draw() {
+      // Background - saloon interior
+      ctx.fillStyle = '#3d2817';
+      ctx.fillRect(0, 0, W, H);
+
+      // Wood paneling
+      ctx.fillStyle = '#4a3525';
+      for (let i = 0; i < 8; i++) {
+        ctx.fillRect(i * 80, 0, 75, H);
+      }
+
+      // Shelves
+      for (let sy of SHELF_Y) {
+        // Shelf bracket
+        ctx.fillStyle = '#2a1a0a';
+        ctx.fillRect(20, sy, W - 40, 8);
+        
+        // Shelf top
+        ctx.fillStyle = '#5a4030';
+        ctx.fillRect(15, sy - 5, W - 30, 8);
+      }
+
+      // Draw targets
+      for (let t of targets) {
+        ctx.save();
+        if (t.hit) {
+          ctx.translate(t.x + t.w/2, t.y + t.h/2);
+          ctx.rotate(t.rotation);
+          ctx.translate(-t.w/2, -t.h/2);
+        } else {
+          ctx.translate(t.x, t.y);
+        }
+        
+        drawTarget(t);
+        ctx.restore();
+      }
+
+      // Draw effects
+      for (let e of effects) {
+        if (e.type === 'flash') {
+          ctx.fillStyle = `rgba(255, 200, 50, ${e.life / 5})`;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, 15, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (e.type === 'score') {
+          ctx.fillStyle = '#ffd700';
+          ctx.font = '14px "Press Start 2P"';
+          ctx.fillText(e.text, e.x - 20, e.y);
+        }
+      }
+
+      // Reload indicator
+      if (reloading) {
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(W/2 - 60, H/2 - 15, 120, 30);
+        ctx.fillStyle = '#ffd700';
+        ctx.font = '12px "Press Start 2P"';
+        ctx.fillText('RELOADING...', W/2 - 55, H/2 + 5);
+      }
+
+      // Crosshair (drawn via CSS cursor)
+    }
+
+    function drawTarget(t) {
+      if (t.type === 'can') {
+        // Tin can
+        ctx.fillStyle = t.color;
+        ctx.fillRect(0, 5, t.w, t.h - 10);
+        ctx.fillStyle = '#a0a0a0';
+        ctx.fillRect(0, 0, t.w, 8);
+        ctx.fillRect(0, t.h - 8, t.w, 8);
+        // Label
+        ctx.fillStyle = '#8b0000';
+        ctx.fillRect(3, 12, t.w - 6, 15);
+      } else if (t.type === 'bottle') {
+        // Glass bottle
+        ctx.fillStyle = t.color;
+        ctx.fillRect(5, 15, t.w - 10, t.h - 15);
+        ctx.fillRect(7, 5, t.w - 14, 12);
+        ctx.fillRect(8, 0, t.w - 16, 8);
+        // Shine
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillRect(8, 18, 4, t.h - 25);
+      } else if (t.type === 'wanted') {
+        // Wanted poster
+        ctx.fillStyle = t.color;
+        ctx.fillRect(0, 0, t.w, t.h);
+        ctx.fillStyle = '#8b4513';
+        ctx.font = '6px "Press Start 2P"';
+        ctx.fillText('WANTED', 3, 12);
+        // Face placeholder
+        ctx.fillStyle = '#333';
+        ctx.fillRect(8, 18, 24, 20);
+        ctx.fillStyle = '#8b4513';
+        ctx.fillText('$500', 8, 48);
+      } else if (t.type === 'badge') {
+        // Sheriff badge (star)
+        ctx.fillStyle = t.color;
+        ctx.beginPath();
+        const cx = t.w/2, cy = t.h/2;
+        for (let i = 0; i < 5; i++) {
+          const angle = (i * 4 * Math.PI / 5) - Math.PI/2;
+          const x = cx + Math.cos(angle) * 15;
+          const y = cy + Math.sin(angle) * 15;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        // Shine
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(cx - 3, cy - 3, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function updateAmmoBar() {
+      const bar = document.getElementById('ammo-bar');
+      bar.innerHTML = '';
+      for (let i = 0; i < MAX_AMMO; i++) {
+        const bullet = document.createElement('div');
+        bullet.className = 'bullet' + (i >= ammo ? ' empty' : '');
+        bar.appendChild(bullet);
+      }
+    }
+
+    function updateUI() {
+      document.getElementById('hits').textContent = hits;
+      document.getElementById('time').textContent = Math.ceil(timeLeft);
+      document.getElementById('score').textContent = score;
+    }
+
+    function loop(timestamp) {
+      const dt = lastTime ? (timestamp - lastTime) / 1000 : 0;
+      lastTime = timestamp;
+      
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // Input
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const scaleY = H / rect.height;
+      if (e.touches) {
+        return {
+          x: (e.touches[0].clientX - rect.left) * scaleX,
+          y: (e.touches[0].clientY - rect.top) * scaleY
+        };
+      }
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+
+    canvas.addEventListener('click', e => {
+      if (gameState !== 'playing') return;
+      const pos = getPos(e);
+      shoot(pos.x, pos.y);
+    });
+
+    canvas.addEventListener('touchstart', e => {
+      if (gameState !== 'playing') return;
+      e.preventDefault();
+      const pos = getPos(e);
+      shoot(pos.x, pos.y);
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'KeyR' && gameState === 'playing') {
+        reload();
+      }
+    });
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+      document.getElementById('start-screen').style.display = 'none';
+      gameState = 'playing';
+      reset();
+    });
+
+    document.getElementById('retry-btn').addEventListener('click', () => {
+      document.getElementById('game-over').style.display = 'none';
+      gameState = 'playing';
+      reset();
+    });
+
+    updateAmmoBar();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

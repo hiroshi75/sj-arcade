@@ -408,4 +408,25 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#016 Tin Can Alley', () => {
+    test('タイトル画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/016-shooting-gallery/`);
+      await expect(page.locator('#start-screen')).toBeVisible();
+      await expect(page.locator('#start-screen .screen-title')).toContainText('TIN CAN ALLEY');
+    });
+
+    test('ゲームが開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/016-shooting-gallery/`);
+      await page.click('#start-btn');
+      await expect(page.locator('#start-screen')).toBeHidden();
+    });
+
+    test('弾丸バーが表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/016-shooting-gallery/`);
+      await page.click('#start-btn');
+      await expect(page.locator('#ammo-bar')).toBeVisible();
+      await expect(page.locator('.bullet')).toHaveCount(6);
+    });
+  });
+
 });
