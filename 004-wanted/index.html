@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Wanted! - Sheriff Jim's Arcade</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: linear-gradient(180deg, #87CEEB 0%, #F4A460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            background: linear-gradient(180deg, #DEB887 0%, #D2691E 100%);
+            width: 600px;
+            height: 700px;
+            border: 8px solid #8B4513;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        #header {
+            background: #8B4513;
+            padding: 15px;
+            text-align: center;
+            color: #FFD700;
+            border-bottom: 4px solid #654321;
+        }
+        
+        h1 {
+            font-size: 28px;
+            text-shadow: 2px 2px 0 #000;
+            margin-bottom: 5px;
+        }
+        
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            font-size: 14px;
+            color: #FFF8DC;
+        }
+        
+        #game-area {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            padding: 20px;
+        }
+        
+        .hole {
+            background: radial-gradient(ellipse at center, #3d2817 0%, #1a0a00 100%);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: crosshair;
+            border: 4px solid #654321;
+            overflow: hidden;
+        }
+        
+        .poster {
+            position: absolute;
+            font-size: 60px;
+            transition: transform 0.15s ease-out;
+            transform: translateY(100px);
+            user-select: none;
+        }
+        
+        .poster.active {
+            transform: translateY(0);
+        }
+        
+        .poster.hit {
+            transform: scale(1.3) rotate(10deg);
+            filter: brightness(2);
+        }
+        
+        .poster.missed {
+            opacity: 0.5;
+            transform: translateY(100px);
+        }
+        
+        #message {
+            text-align: center;
+            padding: 15px;
+            font-size: 20px;
+            color: #FFF8DC;
+            background: rgba(0,0,0,0.3);
+            min-height: 60px;
+        }
+        
+        button {
+            background: linear-gradient(180deg, #FFD700 0%, #DAA520 100%);
+            border: 3px solid #8B4513;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-family: 'Georgia', serif;
+            cursor: pointer;
+            border-radius: 5px;
+            color: #3d2817;
+            font-weight: bold;
+            margin: 10px auto;
+            display: block;
+        }
+        
+        button:hover {
+            background: linear-gradient(180deg, #FFEC8B 0%, #FFD700 100%);
+            transform: scale(1.05);
+        }
+        
+        .score-popup {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 100;
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        .combo-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: #FF4500;
+            text-shadow: 3px 3px 0 #000;
+            animation: comboPop 0.5s ease-out forwards;
+            pointer-events: none;
+            z-index: 200;
+        }
+        
+        @keyframes comboPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.3); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+        
+        #timer-bar {
+            height: 10px;
+            background: #333;
+            margin: 0 20px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        #timer-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ffaa00, #44ff44);
+            transition: width 0.1s linear;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="header">
+            <h1>🎯 WANTED! 🤠</h1>
+            <div id="stats">
+                <span>💰 SCORE: <span id="score">0</span></span>
+                <span>🎯 COMBO: <span id="combo">0</span>x</span>
+                <span>⏱️ TIME: <span id="time">30</span>s</span>
+                <span>🏆 BEST: <span id="best">0</span></span>
+            </div>
+        </div>
+        
+        <div id="timer-bar"><div id="timer-fill" style="width: 100%"></div></div>
+        
+        <div id="game-area">
+            <div class="hole" data-id="0"><span class="poster">🤠</span></div>
+            <div class="hole" data-id="1"><span class="poster">🤠</span></div>
+            <div class="hole" data-id="2"><span class="poster">🤠</span></div>
+            <div class="hole" data-id="3"><span class="poster">🤠</span></div>
+            <div class="hole" data-id="4"><span class="poster">🤠</span></div>
+            <div class="hole" data-id="5"><span class="poster">🤠</span></div>
+            <div class="hole" data-id="6"><span class="poster">🤠</span></div>
+            <div class="hole" data-id="7"><span class="poster">🤠</span></div>
+            <div class="hole" data-id="8"><span class="poster">🤠</span></div>
+        </div>
+        
+        <div id="message">Click the outlaws! 👆 Don't hit the sheriff! 🤠</div>
+        <button onclick="startGame()">🎯 START HUNT</button>
+    </div>
+
+    <script>
+        const outlaws = ['😈', '👿', '💀', '🦹', '🥷', '👺', '🤡'];
+        const sheriff = '🤠';
+        const innocent = '👨‍🌾';
+        
+        let score = 0;
+        let combo = 0;
+        let timeLeft = 30;
+        let gameRunning = false;
+        let best = parseInt(localStorage.getItem('wantedBest') || '0');
+        let gameLoop = null;
+        let spawnLoop = null;
+        let difficulty = 1;
+        
+        document.getElementById('best').textContent = best;
+        
+        // Audio
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(freq, dur, type = 'square') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + dur);
+        }
+        
+        function playHit() {
+            playSound(600, 0.1);
+            playSound(800, 0.1);
+        }
+        
+        function playMiss() {
+            playSound(150, 0.3, 'sawtooth');
+        }
+        
+        function playCombo() {
+            playSound(523, 0.1);
+            setTimeout(() => playSound(659, 0.1), 50);
+            setTimeout(() => playSound(784, 0.1), 100);
+        }
+        
+        const holes = document.querySelectorAll('.hole');
+        const posters = document.querySelectorAll('.poster');
+        
+        holes.forEach((hole, i) => {
+            hole.addEventListener('click', () => {
+                if (!gameRunning) return;
+                
+                const poster = posters[i];
+                const char = poster.textContent;
+                
+                if (!poster.classList.contains('active')) return;
+                
+                poster.classList.remove('active');
+                poster.classList.add('hit');
+                setTimeout(() => poster.classList.remove('hit'), 200);
+                
+                if (outlaws.includes(char)) {
+                    // Hit outlaw!
+                    combo++;
+                    const points = 10 * (1 + Math.floor(combo / 3));
+                    score += points;
+                    playHit();
+                    showPopup(hole, `+${points}`, '#FFD700');
+                    
+                    if (combo > 0 && combo % 5 === 0) {
+                        showCombo(`${combo}x COMBO!`);
+                        playCombo();
+                    }
+                } else if (char === sheriff) {
+                    // Hit sheriff! Penalty!
+                    combo = 0;
+                    score = Math.max(0, score - 50);
+                    playMiss();
+                    showPopup(hole, '-50', '#FF0000');
+                    showCombo('💀 SHERIFF!');
+                } else if (char === innocent) {
+                    // Hit innocent! Small penalty
+                    combo = 0;
+                    score = Math.max(0, score - 20);
+                    playMiss();
+                    showPopup(hole, '-20', '#FF6600');
+                }
+                
+                updateUI();
+            });
+        });
+        
+        function showPopup(hole, text, color) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = text;
+            popup.style.color = color;
+            popup.style.left = hole.offsetLeft + hole.offsetWidth/2 - 20 + 'px';
+            popup.style.top = hole.offsetTop + 'px';
+            document.getElementById('game-area').appendChild(popup);
+            setTimeout(() => popup.remove(), 800);
+        }
+        
+        function showCombo(text) {
+            const combo = document.createElement('div');
+            combo.className = 'combo-text';
+            combo.textContent = text;
+            document.getElementById('game-container').appendChild(combo);
+            setTimeout(() => combo.remove(), 500);
+        }
+        
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('combo').textContent = combo;
+            document.getElementById('time').textContent = timeLeft;
+            document.getElementById('timer-fill').style.width = (timeLeft / 30 * 100) + '%';
+        }
+        
+        function spawnOutlaw() {
+            if (!gameRunning) return;
+            
+            // Find empty holes
+            const available = [];
+            posters.forEach((p, i) => {
+                if (!p.classList.contains('active')) available.push(i);
+            });
+            
+            if (available.length === 0) return;
+            
+            const idx = available[Math.floor(Math.random() * available.length)];
+            const poster = posters[idx];
+            
+            // Decide what to spawn
+            const rand = Math.random();
+            if (rand < 0.15) {
+                poster.textContent = sheriff;  // 15% sheriff (don't hit!)
+            } else if (rand < 0.25) {
+                poster.textContent = innocent;  // 10% innocent
+            } else {
+                poster.textContent = outlaws[Math.floor(Math.random() * outlaws.length)];
+            }
+            
+            poster.classList.add('active');
+            
+            // Auto hide after delay (gets faster with difficulty)
+            const hideTime = Math.max(600, 1500 - difficulty * 100);
+            setTimeout(() => {
+                if (poster.classList.contains('active')) {
+                    poster.classList.remove('active');
+                    poster.classList.add('missed');
+                    setTimeout(() => poster.classList.remove('missed'), 200);
+                    
+                    // Miss penalty for outlaws only
+                    if (outlaws.includes(poster.textContent)) {
+                        combo = 0;
+                        updateUI();
+                    }
+                }
+            }, hideTime);
+        }
+        
+        function startGame() {
+            if (gameRunning) return;
+            
+            score = 0;
+            combo = 0;
+            timeLeft = 30;
+            difficulty = 1;
+            gameRunning = true;
+            
+            updateUI();
+            document.getElementById('message').textContent = 'GET THE OUTLAWS! 🎯';
+            
+            // Spawn loop (gets faster)
+            function scheduleSpawn() {
+                if (!gameRunning) return;
+                const delay = Math.max(300, 800 - difficulty * 50);
+                spawnLoop = setTimeout(() => {
+                    spawnOutlaw();
+                    scheduleSpawn();
+                }, delay);
+            }
+            scheduleSpawn();
+            
+            // Timer
+            gameLoop = setInterval(() => {
+                timeLeft--;
+                if (timeLeft % 10 === 0 && timeLeft > 0) {
+                    difficulty++;
+                }
+                
+                updateUI();
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+        
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameLoop);
+            clearTimeout(spawnLoop);
+            
+            // Hide all posters
+            posters.forEach(p => p.classList.remove('active'));
+            
+            // Update best
+            if (score > best) {
+                best = score;
+                localStorage.setItem('wantedBest', best.toString());
+                document.getElementById('best').textContent = best;
+                document.getElementById('message').textContent = `🎉 NEW RECORD! ${score} points!`;
+                showCombo('🏆 NEW BEST!');
+            } else {
+                document.getElementById('message').textContent = `⏱️ Time's up! Score: ${score}`;
+            }
+        }
+    </script>
+</body>
+</html>
