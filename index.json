@@ -49,6 +49,15 @@
       "created": "2026-02-02T16:38:00+08:00",
       "path": "006-jail-break/",
       "tags": ["breakout", "arcade", "western", "puzzle"]
+    },
+    {
+      "id": "007",
+      "name": "Dusty Trail Dash",
+      "description": "3レーン馬レース！🐴でサボテンや岩を避けながら金貨を集めろ。ジャンプで障害物を飛び越え、どこまで走れるか挑戦だ！",
+      "created": "2026-02-02T17:22:00+08:00",
+      "path": "007-claude-game/",
+      "tags": ["endless-runner", "arcade", "western", "horse-racing"],
+      "generator": "Claude CLI"
     }
   ]
 }

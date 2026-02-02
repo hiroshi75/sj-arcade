@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dusty Trail Dash - Sheriff Jim's Retro Arcade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #1a0a00;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+            border: 4px solid #8B4513;
+            box-shadow: 0 0 20px #ff6600, inset 0 0 20px rgba(139, 69, 19, 0.5);
+        }
+        #gameCanvas {
+            display: block;
+            background: #2d1810;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            color: #ffd700;
+            font-size: 12px;
+            text-shadow: 2px 2px #000;
+            pointer-events: none;
+        }
+        #titleScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(26, 10, 0, 0.95);
+            color: #ffd700;
+            text-align: center;
+            padding: 20px;
+        }
+        #titleScreen h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #ff6600;
+            text-shadow: 3px 3px #000;
+            line-height: 1.4;
+        }
+        #titleScreen .subtitle {
+            font-size: 10px;
+            color: #8B4513;
+            margin-bottom: 30px;
+        }
+        #titleScreen .horse-display {
+            font-size: 64px;
+            margin: 20px 0;
+            animation: bounce 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+        #titleScreen .instructions {
+            font-size: 10px;
+            color: #daa520;
+            margin: 20px 0;
+            line-height: 2;
+        }
+        #titleScreen .start-prompt {
+            font-size: 12px;
+            color: #fff;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        #gameOverScreen h2 {
+            font-size: 28px;
+            color: #ff0000;
+            text-shadow: 3px 3px #000;
+            margin-bottom: 20px;
+        }
+        #gameOverScreen .final-score {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        #gameOverScreen .high-score {
+            font-size: 12px;
+            color: #ffd700;
+            margin-bottom: 30px;
+        }
+        #gameOverScreen .restart-prompt {
+            font-size: 12px;
+            color: #fff;
+            animation: blink 1s infinite;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #controls-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #8B4513;
+            font-size: 8px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="480" height="640"></canvas>
+        <div id="ui">
+            <div id="score">SCORE: 0</div>
+            <div id="distance">DIST: 0m</div>
+            <div id="coins">💰 0</div>
+        </div>
+        <div id="controls-hint">← → MOVE | SPACE JUMP</div>
+
+        <div id="titleScreen">
+            <h1>DUSTY TRAIL<br>DASH</h1>
+            <div class="subtitle">Sheriff Jim's Retro Arcade</div>
+            <div class="horse-display">🐎</div>
+            <div class="instructions">
+                ← → MOVE LEFT/RIGHT<br>
+                SPACE TO JUMP<br>
+                COLLECT 💰 DODGE 🌵🪨
+            </div>
+            <div class="start-prompt">PRESS SPACE TO RIDE</div>
+        </div>
+
+        <div id="gameOverScreen" class="hidden">
+            <h2>GAME OVER</h2>
+            <div class="final-score">SCORE: <span id="finalScore">0</span></div>
+            <div class="high-score">BEST: <span id="highScore">0</span></div>
+            <div class="restart-prompt">PRESS SPACE TO RETRY</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const distanceEl = document.getElementById('distance');
+        const coinsEl = document.getElementById('coins');
+        const titleScreen = document.getElementById('titleScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreEl = document.getElementById('finalScore');
+        const highScoreEl = document.getElementById('highScore');
+
+        // Game states
+        const TITLE = 0, PLAYING = 1, GAMEOVER = 2;
+        let gameState = TITLE;
+
+        // Game variables
+        let score = 0;
+        let coins = 0;
+        let distance = 0;
+        let highScore = localStorage.getItem('dustyTrailHighScore') || 0;
+        let speed = 3;
+        let baseSpeed = 3;
+        let spawnRate = 0.02;
+
+        // Player (horse)
+        const player = {
+            x: 240,
+            y: 500,
+            width: 50,
+            height: 50,
+            speed: 6,
+            jumpPower: 15,
+            velocityY: 0,
+            isJumping: false,
+            groundY: 500,
+            lane: 1 // 0, 1, 2 for three lanes
+        };
+
+        // Lanes
+        const lanes = [120, 240, 360];
+
+        // Arrays for game objects
+        let obstacles = [];
+        let coinItems = [];
+        let dustParticles = [];
+        let decorations = [];
+
+        // Input
+        const keys = {};
+
+        // Initialize
+        function init() {
+            score = 0;
+            coins = 0;
+            distance = 0;
+            speed = baseSpeed;
+            spawnRate = 0.02;
+            player.x = lanes[1];
+            player.y = player.groundY;
+            player.velocityY = 0;
+            player.isJumping = false;
+            player.lane = 1;
+            obstacles = [];
+            coinItems = [];
+            dustParticles = [];
+            decorations = [];
+
+            // Initial decorations
+            for (let i = 0; i < 10; i++) {
+                decorations.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    type: Math.random() > 0.5 ? '🏜️' : '🌾',
+                    size: 20 + Math.random() * 15
+                });
+            }
+        }
+
+        // Spawn obstacles
+        function spawnObstacle() {
+            const lane = Math.floor(Math.random() * 3);
+            const types = ['🌵', '🪨', '🌵', '🪨', '💀'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            obstacles.push({
+                x: lanes[lane],
+                y: -50,
+                width: 40,
+                height: 40,
+                type: type
+            });
+        }
+
+        // Spawn coins
+        function spawnCoin() {
+            const lane = Math.floor(Math.random() * 3);
+            coinItems.push({
+                x: lanes[lane],
+                y: -30,
+                width: 30,
+                height: 30,
+                collected: false
+            });
+        }
+
+        // Spawn dust particles
+        function spawnDust() {
+            if (!player.isJumping) {
+                dustParticles.push({
+                    x: player.x + (Math.random() - 0.5) * 30,
+                    y: player.y + 40,
+                    size: 3 + Math.random() * 5,
+                    alpha: 0.7,
+                    velocityX: (Math.random() - 0.5) * 2,
+                    velocityY: -Math.random() * 2
+                });
+            }
+        }
+
+        // Update game
+        function update() {
+            if (gameState !== PLAYING) return;
+
+            // Increase difficulty
+            distance += speed * 0.1;
+            speed = baseSpeed + Math.floor(distance / 100) * 0.5;
+            spawnRate = Math.min(0.05, 0.02 + distance / 5000);
+
+            // Score
+            score = Math.floor(distance) + coins * 100;
+
+            // Player movement
+            const targetX = lanes[player.lane];
+            player.x += (targetX - player.x) * 0.15;
+
+            // Jump physics
+            if (player.isJumping) {
+                player.velocityY += 0.8; // gravity
+                player.y += player.velocityY;
+                if (player.y >= player.groundY) {
+                    player.y = player.groundY;
+                    player.isJumping = false;
+                    player.velocityY = 0;
+                }
+            }
+
+            // Spawn objects
+            if (Math.random() < spawnRate) spawnObstacle();
+            if (Math.random() < spawnRate * 0.5) spawnCoin();
+            if (Math.random() < 0.3) spawnDust();
+
+            // Update obstacles
+            obstacles.forEach((obs, i) => {
+                obs.y += speed;
+                if (obs.y > canvas.height + 50) {
+                    obstacles.splice(i, 1);
+                }
+            });
+
+            // Update coins
+            coinItems.forEach((coin, i) => {
+                coin.y += speed;
+                if (coin.y > canvas.height + 50) {
+                    coinItems.splice(i, 1);
+                }
+            });
+
+            // Update dust
+            dustParticles.forEach((dust, i) => {
+                dust.y += speed * 0.5 + dust.velocityY;
+                dust.x += dust.velocityX;
+                dust.alpha -= 0.02;
+                if (dust.alpha <= 0) {
+                    dustParticles.splice(i, 1);
+                }
+            });
+
+            // Update decorations
+            decorations.forEach(dec => {
+                dec.y += speed * 0.3;
+                if (dec.y > canvas.height + 50) {
+                    dec.y = -50;
+                    dec.x = Math.random() * canvas.width;
+                }
+            });
+
+            // Collision detection
+            const playerBox = {
+                x: player.x - player.width / 2 + 10,
+                y: player.y - player.height / 2 + 10,
+                width: player.width - 20,
+                height: player.height - 20
+            };
+
+            // Check obstacle collisions
+            for (let obs of obstacles) {
+                const obsBox = {
+                    x: obs.x - obs.width / 2 + 5,
+                    y: obs.y - obs.height / 2 + 5,
+                    width: obs.width - 10,
+                    height: obs.height - 10
+                };
+                if (rectCollision(playerBox, obsBox) && !player.isJumping) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            // Check coin collisions
+            coinItems.forEach((coin, i) => {
+                if (!coin.collected) {
+                    const coinBox = {
+                        x: coin.x - coin.width / 2,
+                        y: coin.y - coin.height / 2,
+                        width: coin.width,
+                        height: coin.height
+                    };
+                    if (rectCollision(playerBox, coinBox)) {
+                        coin.collected = true;
+                        coins++;
+                        coinItems.splice(i, 1);
+                    }
+                }
+            });
+
+            // Update UI
+            scoreEl.textContent = `SCORE: ${score}`;
+            distanceEl.textContent = `DIST: ${Math.floor(distance)}m`;
+            coinsEl.textContent = `💰 ${coins}`;
+        }
+
+        // Collision helper
+        function rectCollision(a, b) {
+            return a.x < b.x + b.width &&
+                   a.x + a.width > b.x &&
+                   a.y < b.y + b.height &&
+                   a.y + a.height > b.y;
+        }
+
+        // Draw game
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = '#c2956e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw trail/road
+            ctx.fillStyle = '#a67c52';
+            ctx.fillRect(60, 0, canvas.width - 120, canvas.height);
+
+            // Draw lane markers
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([20, 20]);
+            const offset = (Date.now() / 50 * speed) % 40;
+            ctx.lineDashOffset = -offset;
+
+            ctx.beginPath();
+            ctx.moveTo(180, 0);
+            ctx.lineTo(180, canvas.height);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(300, 0);
+            ctx.lineTo(300, canvas.height);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+
+            // Draw decorations (background)
+            decorations.forEach(dec => {
+                ctx.font = `${dec.size}px serif`;
+                ctx.textAlign = 'center';
+                ctx.globalAlpha = 0.5;
+                ctx.fillText(dec.type, dec.x, dec.y);
+                ctx.globalAlpha = 1;
+            });
+
+            // Draw dust particles
+            dustParticles.forEach(dust => {
+                ctx.fillStyle = `rgba(139, 90, 43, ${dust.alpha})`;
+                ctx.beginPath();
+                ctx.arc(dust.x, dust.y, dust.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw coins
+            coinItems.forEach(coin => {
+                ctx.font = '30px serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                // Coin glow
+                ctx.shadowColor = '#ffd700';
+                ctx.shadowBlur = 10;
+                ctx.fillText('💰', coin.x, coin.y);
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw obstacles
+            obstacles.forEach(obs => {
+                ctx.font = '40px serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(obs.type, obs.x, obs.y);
+            });
+
+            // Draw player (horse)
+            ctx.font = '50px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Horse shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(player.x, player.groundY + 45, 25, 10, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw horse with slight animation
+            const horseY = player.y + Math.sin(Date.now() / 100) * (player.isJumping ? 0 : 3);
+            ctx.fillText('🐎', player.x, horseY);
+
+            // Jump indicator
+            if (player.isJumping) {
+                ctx.font = '12px "Press Start 2P"';
+                ctx.fillStyle = '#ffd700';
+                ctx.fillText('JUMP!', player.x, player.y - 40);
+            }
+        }
+
+        // Game over
+        function gameOver() {
+            gameState = GAMEOVER;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('dustyTrailHighScore', highScore);
+            }
+            finalScoreEl.textContent = score;
+            highScoreEl.textContent = highScore;
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Input handlers
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+
+            if (gameState === TITLE && e.code === 'Space') {
+                gameState = PLAYING;
+                titleScreen.classList.add('hidden');
+                init();
+            } else if (gameState === GAMEOVER && e.code === 'Space') {
+                gameState = PLAYING;
+                gameOverScreen.classList.add('hidden');
+                init();
+            } else if (gameState === PLAYING) {
+                if (e.code === 'ArrowLeft' && player.lane > 0) {
+                    player.lane--;
+                } else if (e.code === 'ArrowRight' && player.lane < 2) {
+                    player.lane++;
+                } else if (e.code === 'Space' && !player.isJumping) {
+                    player.isJumping = true;
+                    player.velocityY = -player.jumpPower;
+                }
+            }
+
+            if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        // Touch controls for mobile
+        let touchStartX = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            if (gameState === TITLE || gameState === GAMEOVER) {
+                if (gameState === TITLE) {
+                    titleScreen.classList.add('hidden');
+                } else {
+                    gameOverScreen.classList.add('hidden');
+                }
+                gameState = PLAYING;
+                init();
+            }
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchEndX - touchStartX;
+
+            if (Math.abs(diff) < 30) {
+                // Tap - jump
+                if (!player.isJumping && gameState === PLAYING) {
+                    player.isJumping = true;
+                    player.velocityY = -player.jumpPower;
+                }
+            } else if (diff < -30 && player.lane > 0) {
+                player.lane--;
+            } else if (diff > 30 && player.lane < 2) {
+                player.lane++;
+            }
+        });
+
+        // Start game loop
+        highScoreEl.textContent = highScore;
+        gameLoop();
+    </script>
+</body>
+</html>

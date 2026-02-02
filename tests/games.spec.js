@@ -165,6 +165,39 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#007 Dusty Trail Dash', () => {
+    test('タイトル画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/007-claude-game/`);
+      await page.waitForTimeout(500);
+      await expect(page.locator('#titleScreen')).toBeVisible();
+      await expect(page.locator('h1')).toContainText('DUSTY TRAIL');
+    });
+
+    test('ゲームが開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/007-claude-game/`);
+      await page.waitForTimeout(500);
+      await page.keyboard.press('Space');
+      await page.waitForTimeout(500);
+      // タイトル画面が消えることを確認
+      await expect(page.locator('#titleScreen')).toHaveClass(/hidden/);
+    });
+
+    test('レーン移動ができる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/007-claude-game/`);
+      await page.waitForTimeout(500);
+      await page.keyboard.press('Space'); // ゲーム開始
+      await page.waitForTimeout(300);
+      
+      // 左右移動
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowRight');
+      await page.keyboard.press('Space'); // ジャンプ
+      
+      // ゲームがクラッシュしていないことを確認
+      await expect(page.locator('#gameCanvas')).toBeVisible();
+    });
+  });
+
   test.describe('#001 Hawkins 1984', () => {
     test('タイトル画面が表示される', async ({ page }) => {
       await page.goto(`${BASE_URL}/001-hawkins/`);

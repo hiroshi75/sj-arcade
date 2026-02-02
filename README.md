@@ -93,6 +93,22 @@ Stranger Things風の80年代アメリカ田舎町アドベンチャー
 ![Jail Break](screenshots/jail-break.png)
 *BREAK THE BARS! FREE THE OUTLAWS!*
 
+---
+
+### #007 - Dusty Trail Dash 🐴💨
+3レーン馬レースのエンドレスランナー
+
+**特徴:**
+- ← → キーで3レーン移動
+- スペースでジャンプ
+- 💰コインを集めてスコアアップ
+- 🌵🪨💀障害物を避けろ！
+- 難易度が徐々に上昇
+- **Claude CLI**で生成！
+
+![Dusty Trail Dash](screenshots/dusty-trail.png)
+*RIDE YOUR HORSE THROUGH THE DUSTY TRAIL!*
+
 ## 🚀 How to Play
 
 ```bash
