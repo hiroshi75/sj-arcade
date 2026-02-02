@@ -98,6 +98,39 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#005 Cactus Jack', () => {
+    test('タイトル画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/005-cactus-jack/`);
+      await page.waitForTimeout(1000);
+      await expect(page.locator('#title-screen')).toBeVisible();
+      await expect(page.getByRole('button', { name: '▶ START' })).toBeVisible();
+    });
+
+    test('ゲームが開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/005-cactus-jack/`);
+      await page.waitForTimeout(500);
+      await page.click('.start-btn');
+      await page.waitForTimeout(300);
+      // HUDが表示されることを確認
+      await expect(page.locator('#hud')).toBeVisible();
+      await expect(page.locator('#score')).toBeVisible();
+    });
+
+    test('スペースキーで飛べる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/005-cactus-jack/`);
+      await page.waitForTimeout(500);
+      await page.click('.start-btn');
+      await page.waitForTimeout(300);
+      
+      // スペースキーで飛ぶ
+      await page.keyboard.press('Space');
+      await page.keyboard.press('Space');
+      
+      // ゲームがクラッシュしていないことを確認
+      await expect(page.locator('#score')).toBeVisible();
+    });
+  });
+
   test.describe('#001 Hawkins 1984', () => {
     test('タイトル画面が表示される', async ({ page }) => {
       await page.goto(`${BASE_URL}/001-hawkins/`);

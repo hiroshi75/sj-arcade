@@ -33,6 +33,14 @@
       "created": "2026-02-02T14:30:00+08:00",
       "path": "004-wanted/",
       "tags": ["reaction", "arcade", "western", "whack-a-mole"]
+    },
+    {
+      "id": "005",
+      "name": "Cactus Jack",
+      "description": "西部砂漠フラッピーゲーム！🤠カウボーイがサボテンの間を飛び抜ける。タップで上昇、隙間を通り抜けろ！",
+      "created": "2026-02-02T15:48:00+08:00",
+      "path": "005-cactus-jack/",
+      "tags": ["flappy", "arcade", "western", "desert"]
     }
   ]
 }

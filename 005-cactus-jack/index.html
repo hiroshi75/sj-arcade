@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🌵 Cactus Jack - Sheriff Jim's Arcade</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(to bottom, #87CEEB 0%, #F4A460 60%, #DEB887 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 600px;
+            background: linear-gradient(to bottom, 
+                #87CEEB 0%, 
+                #F4A460 70%, 
+                #D2691E 85%,
+                #8B4513 100%);
+            border: 4px solid #8B4513;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+        
+        #game-canvas {
+            display: block;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.7);
+            color: #FFD700;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .overlay.hidden {
+            display: none;
+        }
+        
+        .title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px #8B4513;
+            animation: bounce 0.5s infinite alternate;
+        }
+        
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+        
+        .subtitle {
+            font-size: 10px;
+            color: #DEB887;
+            margin-bottom: 30px;
+        }
+        
+        .player-preview {
+            font-size: 64px;
+            margin: 20px 0;
+            animation: float 1s infinite alternate;
+        }
+        
+        @keyframes float {
+            from { transform: translateY(0) rotate(-10deg); }
+            to { transform: translateY(-15px) rotate(10deg); }
+        }
+        
+        .instructions {
+            font-size: 8px;
+            color: #fff;
+            margin: 20px 0;
+            line-height: 2;
+        }
+        
+        .start-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            padding: 15px 30px;
+            background: linear-gradient(to bottom, #228B22, #006400);
+            color: #fff;
+            border: 3px solid #32CD32;
+            border-radius: 8px;
+            cursor: pointer;
+            text-shadow: 2px 2px #000;
+            transition: transform 0.1s;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.1);
+            background: linear-gradient(to bottom, #32CD32, #228B22);
+        }
+        
+        .score-display {
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        
+        .high-score {
+            font-size: 10px;
+            color: #FFD700;
+            margin: 10px 0;
+        }
+        
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15px;
+            color: #fff;
+            font-size: 12px;
+            text-shadow: 2px 2px #000;
+            z-index: 5;
+        }
+        
+        .medal {
+            font-size: 48px;
+            margin: 10px 0;
+        }
+        
+        /* Desert decorations */
+        .dune {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(to top, #D2691E, transparent);
+            pointer-events: none;
+        }
+        
+        /* Sun */
+        .sun {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            box-shadow: 0 0 30px #FFD700;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="sun"></div>
+        <canvas id="game-canvas" width="400" height="600"></canvas>
+        <div id="hud" class="hidden">
+            <div>SCORE: <span id="score">0</span></div>
+            <div>BEST: <span id="best">0</span></div>
+        </div>
+        
+        <!-- Title Screen -->
+        <div id="title-screen" class="overlay">
+            <div class="title">🌵 CACTUS JACK 🌵</div>
+            <div class="subtitle">A Sheriff Jim Game</div>
+            <div class="player-preview">🤠</div>
+            <div class="instructions">
+                TAP / CLICK / SPACE<br>
+                TO FLY<br><br>
+                AVOID THE CACTI!
+            </div>
+            <button class="start-btn" onclick="startGame()">▶ START</button>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="overlay hidden">
+            <div class="title">GAME OVER</div>
+            <div class="medal" id="medal"></div>
+            <div class="score-display">SCORE: <span id="final-score">0</span></div>
+            <div class="high-score" id="new-best" class="hidden">🎉 NEW BEST! 🎉</div>
+            <div class="high-score">BEST: <span id="final-best">0</span></div>
+            <button class="start-btn" onclick="startGame()">▶ RETRY</button>
+            <button class="start-btn" style="background: linear-gradient(to bottom, #8B4513, #654321); margin-top: 10px; border-color: #DEB887;" onclick="showTitle()">← TITLE</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameState = 'title'; // title, playing, gameover
+        let score = 0;
+        let bestScore = parseInt(localStorage.getItem('cactusJackBest')) || 0;
+        
+        // Player
+        const player = {
+            x: 80,
+            y: 300,
+            width: 40,
+            height: 40,
+            velocity: 0,
+            gravity: 0.5,
+            jumpForce: -9,
+            rotation: 0
+        };
+        
+        // Cacti (pipes)
+        let cacti = [];
+        const cactusWidth = 60;
+        const cactusGap = 160;
+        const cactusSpeed = 3;
+        let cactusTimer = 0;
+        const cactusInterval = 90; // frames
+        
+        // Clouds
+        let clouds = [];
+        
+        // Ground
+        const groundHeight = 80;
+        let groundOffset = 0;
+        
+        // Initialize
+        function init() {
+            document.getElementById('best').textContent = bestScore;
+            document.getElementById('final-best').textContent = bestScore;
+            generateClouds();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function generateClouds() {
+            clouds = [];
+            for (let i = 0; i < 5; i++) {
+                clouds.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * 150 + 20,
+                    size: Math.random() * 30 + 20,
+                    speed: Math.random() * 0.5 + 0.2
+                });
+            }
+        }
+        
+        function startGame() {
+            gameState = 'playing';
+            score = 0;
+            player.y = 300;
+            player.velocity = 0;
+            player.rotation = 0;
+            cacti = [];
+            cactusTimer = 0;
+            
+            document.getElementById('title-screen').classList.add('hidden');
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('score').textContent = '0';
+        }
+        
+        function showTitle() {
+            gameState = 'title';
+            document.getElementById('title-screen').classList.remove('hidden');
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('hud').classList.add('hidden');
+        }
+        
+        function gameOver() {
+            gameState = 'gameover';
+            
+            // Update best score
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('cactusJackBest', bestScore);
+                document.getElementById('new-best').style.display = 'block';
+            } else {
+                document.getElementById('new-best').style.display = 'none';
+            }
+            
+            // Medal based on score
+            let medal = '';
+            if (score >= 50) medal = '🏆';
+            else if (score >= 30) medal = '🥇';
+            else if (score >= 20) medal = '🥈';
+            else if (score >= 10) medal = '🥉';
+            else if (score >= 5) medal = '⭐';
+            document.getElementById('medal').textContent = medal;
+            
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('final-best').textContent = bestScore;
+            document.getElementById('best').textContent = bestScore;
+            
+            setTimeout(() => {
+                document.getElementById('hud').classList.add('hidden');
+                document.getElementById('gameover-screen').classList.remove('hidden');
+            }, 500);
+        }
+        
+        function jump() {
+            if (gameState === 'playing') {
+                player.velocity = player.jumpForce;
+            }
+        }
+        
+        // Input handlers
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                jump();
+            }
+        });
+        
+        canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        });
+        
+        function update() {
+            if (gameState !== 'playing') return;
+            
+            // Player physics
+            player.velocity += player.gravity;
+            player.y += player.velocity;
+            
+            // Rotation based on velocity
+            player.rotation = Math.min(Math.max(player.velocity * 3, -30), 90);
+            
+            // Ground collision
+            if (player.y + player.height > canvas.height - groundHeight) {
+                gameOver();
+                return;
+            }
+            
+            // Ceiling collision
+            if (player.y < 0) {
+                player.y = 0;
+                player.velocity = 0;
+            }
+            
+            // Spawn cacti
+            cactusTimer++;
+            if (cactusTimer >= cactusInterval) {
+                cactusTimer = 0;
+                const gapY = Math.random() * (canvas.height - groundHeight - cactusGap - 150) + 100;
+                cacti.push({
+                    x: canvas.width,
+                    gapY: gapY,
+                    passed: false
+                });
+            }
+            
+            // Update cacti
+            for (let i = cacti.length - 1; i >= 0; i--) {
+                const cactus = cacti[i];
+                cactus.x -= cactusSpeed;
+                
+                // Check if passed
+                if (!cactus.passed && cactus.x + cactusWidth < player.x) {
+                    cactus.passed = true;
+                    score++;
+                    document.getElementById('score').textContent = score;
+                }
+                
+                // Remove off-screen cacti
+                if (cactus.x + cactusWidth < 0) {
+                    cacti.splice(i, 1);
+                    continue;
+                }
+                
+                // Collision detection (with smaller hitbox for fairness)
+                const hitboxPadding = 8;
+                const playerLeft = player.x + hitboxPadding;
+                const playerRight = player.x + player.width - hitboxPadding;
+                const playerTop = player.y + hitboxPadding;
+                const playerBottom = player.y + player.height - hitboxPadding;
+                
+                // Top cactus
+                if (playerRight > cactus.x && playerLeft < cactus.x + cactusWidth) {
+                    if (playerTop < cactus.gapY || playerBottom > cactus.gapY + cactusGap) {
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+            
+            // Update clouds
+            clouds.forEach(cloud => {
+                cloud.x -= cloud.speed;
+                if (cloud.x + cloud.size < 0) {
+                    cloud.x = canvas.width + cloud.size;
+                    cloud.y = Math.random() * 150 + 20;
+                }
+            });
+            
+            // Update ground
+            groundOffset = (groundOffset + cactusSpeed) % 40;
+        }
+        
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw sky gradient
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGradient.addColorStop(0, '#87CEEB');
+            skyGradient.addColorStop(0.6, '#F4A460');
+            skyGradient.addColorStop(1, '#D2691E');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw clouds
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            clouds.forEach(cloud => {
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.size * 0.5, cloud.y - cloud.size * 0.3, cloud.size * 0.7, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.size, cloud.y, cloud.size * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Draw cacti
+            cacti.forEach(cactus => {
+                drawCactus(cactus.x, 0, cactusWidth, cactus.gapY, true); // Top
+                drawCactus(cactus.x, cactus.gapY + cactusGap, cactusWidth, canvas.height - cactus.gapY - cactusGap - groundHeight, false); // Bottom
+            });
+            
+            // Draw ground
+            drawGround();
+            
+            // Draw player
+            drawPlayer();
+        }
+        
+        function drawCactus(x, y, width, height, isTop) {
+            if (height <= 0) return;
+            
+            const segments = Math.ceil(height / 50);
+            const cactusColor = '#228B22';
+            const cactusHighlight = '#32CD32';
+            const cactusShadow = '#006400';
+            
+            ctx.save();
+            
+            // Main body
+            ctx.fillStyle = cactusColor;
+            ctx.fillRect(x + 10, y, width - 20, height);
+            
+            // Highlight
+            ctx.fillStyle = cactusHighlight;
+            ctx.fillRect(x + 12, y, 8, height);
+            
+            // Shadow
+            ctx.fillStyle = cactusShadow;
+            ctx.fillRect(x + width - 20, y, 8, height);
+            
+            // Spikes
+            ctx.fillStyle = '#90EE90';
+            for (let i = 0; i < height; i += 20) {
+                // Left spikes
+                ctx.beginPath();
+                ctx.moveTo(x + 10, y + i + 10);
+                ctx.lineTo(x, y + i + 5);
+                ctx.lineTo(x + 10, y + i);
+                ctx.fill();
+                
+                // Right spikes
+                ctx.beginPath();
+                ctx.moveTo(x + width - 10, y + i + 10);
+                ctx.lineTo(x + width, y + i + 5);
+                ctx.lineTo(x + width - 10, y + i);
+                ctx.fill();
+            }
+            
+            // Cap (end piece)
+            if (isTop) {
+                // Bottom cap for top cactus
+                ctx.fillStyle = cactusColor;
+                ctx.beginPath();
+                ctx.ellipse(x + width/2, y + height, width/2 - 10, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Top cap for bottom cactus
+                ctx.fillStyle = cactusColor;
+                ctx.beginPath();
+                ctx.ellipse(x + width/2, y, width/2 - 10, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawGround() {
+            // Sand color
+            ctx.fillStyle = '#D2691E';
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+            
+            // Pattern
+            ctx.fillStyle = '#8B4513';
+            for (let x = -groundOffset; x < canvas.width; x += 40) {
+                ctx.fillRect(x, canvas.height - groundHeight, 20, 5);
+            }
+            
+            // Ground line
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, 4);
+            
+            // Small cacti decorations
+            ctx.font = '20px serif';
+            ctx.fillText('🌵', 50 - groundOffset % 200, canvas.height - 30);
+            ctx.fillText('🌵', 150 - groundOffset % 200, canvas.height - 25);
+            ctx.fillText('🌵', 280 - groundOffset % 200, canvas.height - 35);
+            ctx.fillText('🌵', 350 - groundOffset % 200, canvas.height - 28);
+        }
+        
+        function drawPlayer() {
+            ctx.save();
+            ctx.translate(player.x + player.width/2, player.y + player.height/2);
+            ctx.rotate(player.rotation * Math.PI / 180);
+            
+            // Draw cowboy emoji
+            ctx.font = '36px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🤠', 0, 0);
+            
+            ctx.restore();
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start
+        init();
+    </script>
+</body>
+</html>

@@ -65,6 +65,20 @@ Stranger Things風の80年代アメリカ田舎町アドベンチャー
 ![Wanted!](screenshots/wanted.png)
 *Quick on the draw, Sheriff!*
 
+---
+
+### #005 - Cactus Jack 🌵🤠
+西部砂漠を飛ぶフラッピーゲーム
+
+**特徴:**
+- タップ/クリック/スペースで上昇
+- サボテンの隙間を通り抜けろ！
+- スコアに応じてメダル獲得
+- ベストスコア保存機能
+
+![Cactus Jack](screenshots/cactus-jack.png)
+*AVOID THE CACTI!*
+
 ## 🚀 How to Play
 
 ```bash
