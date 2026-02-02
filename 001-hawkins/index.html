@@ -899,13 +899,28 @@
                 playBleep();
                 render();
                 
-                const timer = setInterval(() => {
+                // Countdown timer (1 second intervals)
+                const countdownTimer = setInterval(() => {
                     if (!gameActive) {
-                        clearInterval(timer);
+                        clearInterval(countdownTimer);
                         return;
                     }
-                    
                     timeLeft--;
+                    
+                    // Spawn more monsters occasionally
+                    if (Math.random() < 0.3) spawnMonster();
+                    
+                    if (timeLeft <= 0) {
+                        endHunt();
+                    }
+                }, 1000);
+                
+                // Game loop (60 FPS for smooth movement)
+                const gameLoop = setInterval(() => {
+                    if (!gameActive) {
+                        clearInterval(gameLoop);
+                        return;
+                    }
                     
                     // Move monsters toward player (use center points)
                     const playerCenterX = playerX + 18;  // half of 36px emoji
@@ -919,9 +934,11 @@
                         let dx = playerCenterX - monsterCenterX;
                         let dy = playerCenterY - monsterCenterY;
                         let dist = Math.sqrt(dx*dx + dy*dy);
+                        
+                        // Move monster (speed ~60 pixels per second at 60fps)
                         if (dist > 0) {
-                            m.x += (dx / dist) * 2;
-                            m.y += (dy / dist) * 2;
+                            m.x += (dx / dist) * 1;
+                            m.y += (dy / dist) * 1;
                         }
                         
                         // Recalculate center distance AFTER movement
@@ -931,8 +948,8 @@
                         dy = playerCenterY - newMonsterCenterY;
                         dist = Math.sqrt(dx*dx + dy*dy);
                         
-                        // Check collision - very tight hitbox (centers must be within 22px)
-                        if (dist < 22 && !state.invincible) {
+                        // Check collision - tight hitbox (centers within 20px = overlapping)
+                        if (dist < 20 && !state.invincible) {
                             state.health -= 25;
                             playLose();
                             
@@ -944,6 +961,9 @@
                                     // Invincibility frames after losing a life
                                     state.invincible = true;
                                     setTimeout(() => { state.invincible = false; }, 2000);
+                                } else {
+                                    endHunt();
+                                    return;
                                 }
                             } else {
                                 // Brief invincibility after hit
@@ -952,35 +972,38 @@
                             }
                             
                             updateStats();
-                            m.x = Math.random() * 520 + 30;
-                            m.y = Math.random() * 290 + 30;
+                            // Respawn monster away from player
+                            do {
+                                m.x = Math.random() * 480 + 40;
+                                m.y = Math.random() * 250 + 40;
+                            } while (Math.sqrt((m.x+19-playerCenterX)**2 + (m.y+19-playerCenterY)**2) < 100);
                         }
                     });
                     
-                    if (timeLeft <= 0 || state.lives <= 0) {
-                        gameActive = false;
-                        clearInterval(timer);
-                        
-                        const reward = huntScore * 10;
-                        state.money += reward;
-                        state.score += huntScore * 5;
-                        
-                        render();
-                        
-                        if (state.lives <= 0) {
-                            area.innerHTML += `<div class="game-text" style="color:#ff0000;font-size:24px;">💀 GAME OVER 💀</div>`;
-                            state.lives = 3;
-                            state.health = 100;
-                        } else {
-                            area.innerHTML += `<div class="game-text" style="color:#ff6b6b;">HUNT OVER! KILLED ${huntScore} DEMOGORGONS! +$${reward}</div>`;
-                        }
-                        updateStats();
+                    render();
+                }, 16);  // ~60 FPS
+                
+                function endHunt() {
+                    if (!gameActive) return;
+                    gameActive = false;
+                    clearInterval(gameLoop);
+                    clearInterval(countdownTimer);
+                    
+                    const reward = huntScore * 10;
+                    state.money += reward;
+                    state.score += huntScore * 5;
+                    
+                    render();
+                    
+                    if (state.lives <= 0) {
+                        area.innerHTML += `<div class="game-text" style="color:#ff0000;font-size:24px;">💀 GAME OVER 💀</div>`;
+                        state.lives = 3;
+                        state.health = 100;
                     } else {
-                        // Spawn more monsters
-                        if (Math.random() < 0.05) spawnMonster();
-                        render();
+                        area.innerHTML += `<div class="game-text" style="color:#ff6b6b;">HUNT OVER! KILLED ${huntScore} DEMOGORGONS! +$${reward}</div>`;
                     }
-                }, 1000);
+                    updateStats();
+                }
                 
                 // Remove old handler if exists
                 if (keyHandler) {
