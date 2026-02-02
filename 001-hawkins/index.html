@@ -1048,15 +1048,16 @@
                             m.y += (dy / dist) * 1;
                         }
                         
-                        // Recalculate center distance AFTER movement
-                        const newMonsterCenterX = m.x + 19;
-                        const newMonsterCenterY = m.y + 19;
-                        dx = playerCenterX - newMonsterCenterX;
-                        dy = playerCenterY - newMonsterCenterY;
-                        dist = Math.sqrt(dx*dx + dy*dy);
+                        // Rectangle-based collision (more forgiving)
+                        // diffX/Y = monster position - player position
+                        const diffX = m.x - playerX;
+                        const diffY = m.y - playerY;
                         
-                        // Check collision - tight hitbox (centers within 20px = overlapping)
-                        if (dist < 20 && !state.invincible) {
+                        // Collision if: -10 < diff < 15 for both axes
+                        const collisionX = diffX > -10 && diffX < 15;
+                        const collisionY = diffY > -10 && diffY < 15;
+                        
+                        if (collisionX && collisionY && !state.invincible) {
                             state.health -= 25;
                             playLose();
                             showHitEffect(playerCenterX, playerCenterY, 25);
