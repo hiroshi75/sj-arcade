@@ -322,4 +322,24 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#012 Horseshoe Toss', () => {
+    test('タイトル画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/012-horseshoe/`);
+      await expect(page.locator('#title-screen h1')).toContainText('HORSESHOE');
+    });
+
+    test('ゲームが開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/012-horseshoe/`);
+      await page.click('.btn');
+      await expect(page.locator('#title-screen')).toHaveClass(/hidden/);
+    });
+
+    test('蹄鉄と杭が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/012-horseshoe/`);
+      await page.click('.btn');
+      await expect(page.locator('#stake')).toBeVisible();
+      await expect(page.locator('.horseshoe')).toBeVisible();
+    });
+  });
+
 });

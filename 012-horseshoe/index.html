@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Horseshoe Toss - Sheriff Jim's Retro Arcade</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(180deg, #87CEEB 0%, #f4a460 70%, #deb887 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            aspect-ratio: 3/4;
+            background: linear-gradient(180deg, #87CEEB 0%, #c4a35a 60%, #8B7355 100%);
+            border: 4px solid #8B4513;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+        /* Ground */
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 45%;
+            background: linear-gradient(180deg, #c4a35a 0%, #a08050 100%);
+        }
+        /* Stake */
+        #stake {
+            position: absolute;
+            bottom: 45%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 80px;
+            background: linear-gradient(90deg, #654321, #8B4513, #654321);
+            border-radius: 2px;
+            z-index: 10;
+        }
+        #stake::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: #8B4513;
+            border-radius: 50%;
+        }
+        /* Target zones */
+        .target-zone {
+            position: absolute;
+            bottom: 42%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 50%;
+            border: 2px dashed rgba(139, 69, 19, 0.5);
+            pointer-events: none;
+        }
+        .zone-3 { width: 60px; height: 30px; }
+        .zone-2 { width: 100px; height: 50px; }
+        .zone-1 { width: 150px; height: 75px; }
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            color: #8B4513;
+            font-size: 11px;
+            text-shadow: 1px 1px 0 #fff;
+            z-index: 20;
+        }
+        /* Score display */
+        #round-info {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: #8B4513;
+            font-size: 10px;
+            text-shadow: 1px 1px 0 #fff;
+            z-index: 20;
+        }
+        /* Power meter */
+        #power-container {
+            position: absolute;
+            bottom: 15%;
+            left: 20px;
+            width: 30px;
+            height: 150px;
+            background: #333;
+            border: 3px solid #8B4513;
+            border-radius: 5px;
+            z-index: 20;
+        }
+        #power-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(180deg, #ff0000, #ffff00, #00ff00);
+            border-radius: 0 0 2px 2px;
+            transition: height 0.05s;
+        }
+        #power-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #8B4513;
+            font-size: 8px;
+            text-shadow: 1px 1px 0 #fff;
+            white-space: nowrap;
+        }
+        /* Horseshoe */
+        .horseshoe {
+            position: absolute;
+            font-size: 40px;
+            z-index: 15;
+            transition: none;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+        }
+        .horseshoe.landed {
+            filter: none;
+        }
+        /* Throw area */
+        #throw-area {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 15;
+        }
+        /* Aim indicator */
+        #aim-line {
+            position: absolute;
+            bottom: 12%;
+            left: 50%;
+            width: 3px;
+            height: 100px;
+            background: rgba(255, 0, 0, 0.5);
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(0deg);
+            z-index: 5;
+            pointer-events: none;
+        }
+        /* Score popup */
+        .score-popup {
+            position: absolute;
+            font-size: 24px;
+            color: #FFD700;
+            text-shadow: 2px 2px 0 #8B4513;
+            z-index: 30;
+            animation: popUp 1s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes popUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+        }
+        /* Overlays */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
+        }
+        .overlay.hidden { display: none; }
+        .overlay h1 {
+            color: #FFD700;
+            font-size: 20px;
+            text-shadow: 3px 3px 0 #8B4513;
+            margin-bottom: 15px;
+        }
+        .overlay .icon { font-size: 60px; margin: 15px 0; }
+        .overlay p {
+            color: #fff;
+            font-size: 9px;
+            margin: 8px 0;
+            line-height: 1.8;
+        }
+        .overlay .score-final { 
+            color: #FFD700; 
+            font-size: 18px; 
+            margin: 15px 0; 
+        }
+        .btn {
+            background: #8B4513;
+            color: #FFD700;
+            border: 3px solid #FFD700;
+            padding: 12px 25px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .btn:hover { background: #FFD700; color: #8B4513; }
+        /* Instructions */
+        #instructions {
+            position: absolute;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #654321;
+            font-size: 7px;
+            text-align: center;
+            z-index: 20;
+        }
+        /* Landed horseshoes display */
+        #landed-shoes {
+            position: absolute;
+            bottom: 38%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 8;
+        }
+        /* Mobile responsive */
+        @media (max-width: 500px) {
+            body { padding: 5px; }
+            #game-container { max-height: 95vh; }
+            #hud { font-size: 9px; }
+            #round-info { font-size: 8px; top: 35px; }
+            #power-container { width: 25px; height: 120px; left: 10px; }
+            #power-label { font-size: 7px; }
+            .horseshoe { font-size: 32px; }
+            .overlay h1 { font-size: 16px; }
+            .overlay .icon { font-size: 48px; }
+            .overlay p { font-size: 8px; }
+            .btn { font-size: 10px; padding: 10px 20px; }
+            #instructions { font-size: 6px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="ground"></div>
+        <div class="target-zone zone-1"></div>
+        <div class="target-zone zone-2"></div>
+        <div class="target-zone zone-3"></div>
+        <div id="stake"></div>
+        <div id="landed-shoes"></div>
+        
+        <div id="hud">
+            <div>SCORE: <span id="score">0</span></div>
+            <div>BEST: <span id="best">0</span></div>
+        </div>
+        
+        <div id="round-info">
+            ROUND <span id="round">1</span>/5 | THROW <span id="throw">1</span>/3
+        </div>
+        
+        <div id="power-container">
+            <div id="power-fill"></div>
+            <div id="power-label">POWER</div>
+        </div>
+        
+        <div id="aim-line"></div>
+        
+        <div id="throw-area">
+            <span class="horseshoe" id="current-shoe">🧲</span>
+        </div>
+        
+        <div id="instructions">DRAG TO AIM | RELEASE TO THROW</div>
+        
+        <!-- Title Screen -->
+        <div id="title-screen" class="overlay">
+            <h1>🧲 HORSESHOE TOSS 🧲</h1>
+            <div class="icon">🎯</div>
+            <p>TOSS HORSESHOES AT THE STAKE!</p>
+            <p>RINGER (around) = 3 PTS<br>LEANER (close) = 2 PTS<br>NEAR = 1 PT</p>
+            <p>DRAG TO AIM & SET POWER<br>RELEASE TO THROW!</p>
+            <p>5 ROUNDS × 3 THROWS</p>
+            <button class="btn" onclick="startGame()">▶ PLAY</button>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="overlay hidden">
+            <h1 id="result-title">GAME OVER</h1>
+            <div class="icon" id="result-icon">🧲</div>
+            <div class="score-final">FINAL SCORE: <span id="final-score">0</span></div>
+            <p id="result-msg">Good tossin', partner!</p>
+            <button class="btn" onclick="startGame()">▶ PLAY AGAIN</button>
+        </div>
+    </div>
+    
+    <script>
+        // Audio
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        
+        function initAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
+        
+        function playSound(freq, dur, type = 'square') {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + dur);
+        }
+        
+        function playThrow() { playSound(300, 0.1); }
+        function playLand() { playSound(150, 0.15, 'triangle'); }
+        function playRinger() {
+            playSound(523, 0.1); playSound(659, 0.1);
+            setTimeout(() => { playSound(784, 0.15); playSound(1047, 0.2); }, 100);
+        }
+        function playPoint() { playSound(440, 0.1); playSound(550, 0.1); }
+        
+        // Game state
+        let gameState = 'title';
+        let score = 0;
+        let bestScore = parseInt(localStorage.getItem('horseshoe_best') || '0');
+        let round = 1;
+        let throwNum = 1;
+        let landedShoes = [];
+        
+        // Throw state
+        let isDragging = false;
+        let aimAngle = 0;
+        let power = 0;
+        let powerDir = 1;
+        let powerInterval = null;
+        
+        // DOM
+        const container = document.getElementById('game-container');
+        const titleScreen = document.getElementById('title-screen');
+        const gameoverScreen = document.getElementById('gameover-screen');
+        const currentShoe = document.getElementById('current-shoe');
+        const aimLine = document.getElementById('aim-line');
+        const powerFill = document.getElementById('power-fill');
+        const scoreEl = document.getElementById('score');
+        const bestEl = document.getElementById('best');
+        const roundEl = document.getElementById('round');
+        const throwEl = document.getElementById('throw');
+        const landedShoesEl = document.getElementById('landed-shoes');
+        
+        // Stake position (center of container)
+        const stakeX = 240; // Will be adjusted based on container size
+        const stakeY = 280;
+        
+        // Init
+        bestEl.textContent = bestScore;
+        
+        function startGame() {
+            gameState = 'aiming';
+            score = 0;
+            round = 1;
+            throwNum = 1;
+            landedShoes = [];
+            
+            titleScreen.classList.add('hidden');
+            gameoverScreen.classList.add('hidden');
+            
+            updateUI();
+            resetThrow();
+        }
+        
+        function resetThrow() {
+            currentShoe.style.display = 'block';
+            currentShoe.style.transform = 'rotate(0deg)';
+            aimAngle = 0;
+            power = 50;
+            aimLine.style.transform = 'translateX(-50%) rotate(0deg)';
+            powerFill.style.height = '50%';
+            gameState = 'aiming';
+        }
+        
+        function updateUI() {
+            scoreEl.textContent = score;
+            roundEl.textContent = round;
+            throwEl.textContent = throwNum;
+            
+            // Render landed shoes
+            landedShoesEl.innerHTML = landedShoes.map(s => 
+                `<span class="horseshoe landed" style="position:absolute;left:${s.x}px;top:${s.y}px;font-size:30px;transform:rotate(${s.rot}deg);">🧲</span>`
+            ).join('');
+        }
+        
+        function getContainerRect() {
+            return container.getBoundingClientRect();
+        }
+        
+        function handleStart(clientX, clientY) {
+            if (gameState !== 'aiming') return;
+            
+            isDragging = true;
+            
+            // Start power oscillation
+            powerInterval = setInterval(() => {
+                power += powerDir * 2;
+                if (power >= 100) { power = 100; powerDir = -1; }
+                if (power <= 0) { power = 0; powerDir = 1; }
+                powerFill.style.height = power + '%';
+            }, 30);
+        }
+        
+        function handleMove(clientX, clientY) {
+            if (!isDragging || gameState !== 'aiming') return;
+            
+            const rect = getContainerRect();
+            const centerX = rect.left + rect.width / 2;
+            const throwY = rect.bottom - rect.height * 0.12;
+            
+            // Calculate angle from throw position to cursor
+            const dx = clientX - centerX;
+            const dy = throwY - clientY;
+            
+            aimAngle = Math.atan2(dx, dy) * (180 / Math.PI);
+            aimAngle = Math.max(-45, Math.min(45, aimAngle));
+            
+            aimLine.style.transform = `translateX(-50%) rotate(${aimAngle}deg)`;
+        }
+        
+        function handleEnd() {
+            if (!isDragging || gameState !== 'aiming') return;
+            
+            isDragging = false;
+            clearInterval(powerInterval);
+            
+            throwHorseshoe();
+        }
+        
+        function throwHorseshoe() {
+            gameState = 'throwing';
+            playThrow();
+            
+            const rect = getContainerRect();
+            const containerWidth = rect.width;
+            const containerHeight = rect.height;
+            
+            // Starting position (bottom center)
+            let x = containerWidth / 2;
+            let y = containerHeight * 0.88;
+            
+            // Velocity based on angle and power
+            const radAngle = aimAngle * (Math.PI / 180);
+            const speed = power * 0.15 + 5;
+            let vx = Math.sin(radAngle) * speed;
+            let vy = -speed * 1.5;
+            
+            // Target area (stake position)
+            const targetY = containerHeight * 0.42;
+            const targetX = containerWidth / 2;
+            
+            let rotation = 0;
+            let rotSpeed = (Math.random() - 0.5) * 20;
+            
+            function animate() {
+                if (gameState !== 'throwing') return;
+                
+                // Physics
+                vy += 0.5; // gravity
+                x += vx;
+                y += vy;
+                rotation += rotSpeed;
+                
+                // Update shoe position
+                currentShoe.style.position = 'absolute';
+                currentShoe.style.left = (x - 20) + 'px';
+                currentShoe.style.top = (y - 20) + 'px';
+                currentShoe.style.transform = `rotate(${rotation}deg)`;
+                
+                // Check if landed
+                if (y >= targetY && vy > 0) {
+                    landShoe(x, y, rotation);
+                    return;
+                }
+                
+                // Out of bounds
+                if (y > containerHeight || x < 0 || x > containerWidth) {
+                    landShoe(x, Math.min(y, containerHeight * 0.55), rotation);
+                    return;
+                }
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        function landShoe(x, y, rotation) {
+            playLand();
+            
+            const rect = getContainerRect();
+            const containerWidth = rect.width;
+            const targetX = containerWidth / 2;
+            const targetY = rect.height * 0.42;
+            
+            // Calculate distance from stake
+            const dx = x - targetX;
+            const dy = y - targetY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Score based on distance
+            let points = 0;
+            let msg = '';
+            
+            if (distance < 25) {
+                points = 3;
+                msg = 'RINGER! +3';
+                playRinger();
+            } else if (distance < 50) {
+                points = 2;
+                msg = 'LEANER! +2';
+                playPoint();
+            } else if (distance < 80) {
+                points = 1;
+                msg = 'CLOSE! +1';
+                playPoint();
+            } else {
+                msg = 'MISS!';
+            }
+            
+            score += points;
+            
+            // Show score popup
+            if (msg) {
+                showPopup(x, y - 30, msg, points > 0 ? '#FFD700' : '#ff6b6b');
+            }
+            
+            // Add to landed shoes (relative to landed-shoes container)
+            const relX = x - targetX;
+            const relY = 0;
+            landedShoes.push({ x: relX, y: relY, rot: rotation % 360 });
+            
+            currentShoe.style.display = 'none';
+            updateUI();
+            
+            // Next throw or round
+            setTimeout(() => {
+                throwNum++;
+                
+                if (throwNum > 3) {
+                    throwNum = 1;
+                    round++;
+                    landedShoes = []; // Clear for new round
+                    
+                    if (round > 5) {
+                        endGame();
+                        return;
+                    }
+                }
+                
+                updateUI();
+                resetThrow();
+            }, 1000);
+        }
+        
+        function showPopup(x, y, text, color) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = text;
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            popup.style.color = color;
+            container.appendChild(popup);
+            setTimeout(() => popup.remove(), 1000);
+        }
+        
+        function endGame() {
+            gameState = 'gameover';
+            
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('horseshoe_best', bestScore.toString());
+                bestEl.textContent = bestScore;
+                document.getElementById('result-title').textContent = '🏆 NEW RECORD! 🏆';
+                document.getElementById('result-msg').textContent = 'Best tosser in the West!';
+            } else if (score >= 30) {
+                document.getElementById('result-title').textContent = '⭐ GREAT GAME! ⭐';
+                document.getElementById('result-msg').textContent = 'Sharp shootin\', partner!';
+            } else if (score >= 15) {
+                document.getElementById('result-title').textContent = 'GOOD GAME!';
+                document.getElementById('result-msg').textContent = 'Not bad, cowboy!';
+            } else {
+                document.getElementById('result-title').textContent = 'GAME OVER';
+                document.getElementById('result-msg').textContent = 'Keep practicin\'!';
+            }
+            
+            document.getElementById('final-score').textContent = score;
+            gameoverScreen.classList.remove('hidden');
+        }
+        
+        // Input handlers - Mouse
+        container.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.btn') || e.target.closest('.overlay:not(.hidden)')) return;
+            handleStart(e.clientX, e.clientY);
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            handleMove(e.clientX, e.clientY);
+        });
+        
+        document.addEventListener('mouseup', () => {
+            handleEnd();
+        });
+        
+        // Input handlers - Touch
+        container.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.btn') || e.target.closest('.overlay:not(.hidden)')) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            handleStart(touch.clientX, touch.clientY);
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            handleMove(touch.clientX, touch.clientY);
+        });
+        
+        document.addEventListener('touchend', () => {
+            handleEnd();
+        });
+        
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                if (gameState === 'title') {
+                    startGame();
+                } else if (gameState === 'gameover') {
+                    startGame();
+                } else if (gameState === 'aiming' && !isDragging) {
+                    // Quick throw with space
+                    handleStart(0, 0);
+                }
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space' && isDragging) {
+                handleEnd();
+            }
+        });
+    </script>
+</body>
+</html>
