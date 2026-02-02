@@ -164,7 +164,13 @@
         
         <div id="ui">
             <div>SCORE: <span id="score">0</span></div>
-            <div>❤️ <span id="lives">3</span></div>
+            <div style="display:flex;align-items:center;gap:5px;">
+                ❤️ x<span id="lives">3</span>
+                <div style="width:80px;height:12px;background:#333;border:1px solid #666;border-radius:6px;overflow:hidden;">
+                    <div id="hp-bar" style="width:100%;height:100%;background:#6bcb77;transition:width 0.2s,background 0.2s;"></div>
+                </div>
+                <span id="hp-text" style="font-size:8px;">100</span>
+            </div>
             <div>WAVE: <span id="wave">1</span></div>
         </div>
         
@@ -229,8 +235,10 @@
         let gameState = 'title';
         let score = 0;
         let lives = 3;
+        let hp = 100;
         let wave = 1;
         let highScore = parseInt(localStorage.getItem('spaceCowboyHighScore')) || 0;
+        let invincible = false;
         
         // Player
         const player = {
@@ -473,35 +481,69 @@
             bullets = bullets.filter(b => !b.hit);
             enemies = enemies.filter(e => !e.dead);
             
-            // Collision: player vs enemy bullets
-            if (player.powerUp !== 'shield') {
+            // Collision: player vs enemy bullets (forgiving hitbox - shrink by 10px each side)
+            if (player.powerUp !== 'shield' && !invincible) {
+                const px = player.x + 10;  // Shrink hitbox
+                const py = player.y + 10;
+                const pw = player.width - 20;
+                const ph = player.height - 20;
+                
                 bullets.forEach(b => {
                     if (b.friendly) return;
-                    if (b.x > player.x && b.x < player.x + player.width &&
-                        b.y > player.y && b.y < player.y + player.height) {
+                    if (b.x > px && b.x < px + pw &&
+                        b.y > py && b.y < py + ph) {
                         b.hit = true;
-                        lives--;
+                        hp -= 20;  // Bullet damage
                         playExplosion();
                         createParticles(player.x + 20, player.y + 20, '#f00', 20);
-                        if (lives <= 0) {
-                            gameOver();
+                        
+                        if (hp <= 0) {
+                            lives--;
+                            if (lives <= 0) {
+                                gameOver();
+                            } else {
+                                hp = 100;
+                                invincible = true;
+                                setTimeout(() => { invincible = false; }, 2000);
+                            }
+                        } else {
+                            invincible = true;
+                            setTimeout(() => { invincible = false; }, 500);
                         }
+                        updateHpBar();
                     }
                 });
             }
             
-            // Collision: player vs enemies
-            if (player.powerUp !== 'shield') {
+            // Collision: player vs enemies (forgiving hitbox)
+            if (player.powerUp !== 'shield' && !invincible) {
+                const px = player.x + 8;
+                const py = player.y + 8;
+                const pw = player.width - 16;
+                const ph = player.height - 16;
+                
                 enemies.forEach(e => {
-                    if (player.x < e.x + e.width && player.x + player.width > e.x &&
-                        player.y < e.y + e.height && player.y + player.height > e.y) {
-                        lives--;
+                    if (px < e.x + e.width && px + pw > e.x &&
+                        py < e.y + e.height && py + ph > e.y) {
+                        hp -= 40;  // Enemy collision damage
                         e.dead = true;
                         playExplosion();
                         createParticles(player.x + 20, player.y + 20, '#f00', 20);
-                        if (lives <= 0) {
-                            gameOver();
+                        
+                        if (hp <= 0) {
+                            lives--;
+                            if (lives <= 0) {
+                                gameOver();
+                            } else {
+                                hp = 100;
+                                invincible = true;
+                                setTimeout(() => { invincible = false; }, 2000);
+                            }
+                        } else {
+                            invincible = true;
+                            setTimeout(() => { invincible = false; }, 1000);
                         }
+                        updateHpBar();
                     }
                 });
             }
@@ -529,6 +571,17 @@
             document.getElementById('score').textContent = score;
             document.getElementById('lives').textContent = lives;
             document.getElementById('wave').textContent = wave;
+            updateHpBar();
+        }
+        
+        function updateHpBar() {
+            const hpBar = document.getElementById('hp-bar');
+            const hpText = document.getElementById('hp-text');
+            if (hpBar && hpText) {
+                hpBar.style.width = hp + '%';
+                hpBar.style.background = hp > 50 ? '#6bcb77' : hp > 25 ? '#ffd93d' : '#ff6b6b';
+                hpText.textContent = hp;
+            }
         }
         
         function draw() {
@@ -604,8 +657,10 @@
                     ctx.stroke();
                 }
                 
-                // Player ship (cowboy in spaceship)
-                ctx.fillText('🚀', player.x, player.y + 35);
+                // Player ship (cowboy in spaceship) - blink when invincible
+                if (!invincible || Math.floor(Date.now() / 100) % 2 === 0) {
+                    ctx.fillText('🚀', player.x, player.y + 35);
+                }
                 
                 // Power-up indicator
                 if (player.powerUp) {
@@ -627,6 +682,8 @@
             gameState = 'playing';
             score = 0;
             lives = 3;
+            hp = 100;
+            invincible = false;
             wave = 1;
             player.x = 220;
             player.y = 620;
@@ -635,6 +692,7 @@
             enemies = [];
             particles = [];
             powerUps = [];
+            updateHpBar();
             
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('game-over-screen').classList.add('hidden');
