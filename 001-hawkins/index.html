@@ -895,16 +895,21 @@
                     // Move monsters toward player
                     monsters.forEach(m => {
                         if (!m.alive) return;
-                        const dx = playerX - m.x;
-                        const dy = playerY - m.y;
-                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        let dx = playerX - m.x;
+                        let dy = playerY - m.y;
+                        let dist = Math.sqrt(dx*dx + dy*dy);
                         if (dist > 0) {
                             m.x += (dx / dist) * 2;
                             m.y += (dy / dist) * 2;
                         }
                         
-                        // Check collision with player
-                        if (dist < 25) {
+                        // Recalculate distance AFTER movement for accurate collision
+                        dx = playerX - m.x;
+                        dy = playerY - m.y;
+                        dist = Math.sqrt(dx*dx + dy*dy);
+                        
+                        // Check collision with player (tighter hitbox)
+                        if (dist < 18) {
                             state.health -= 10;
                             updateStats();
                             playLose();

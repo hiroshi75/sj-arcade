@@ -9,6 +9,14 @@
       "created": "2026-02-02T09:35:00+08:00",
       "path": "001-hawkins/",
       "tags": ["adventure", "minigames", "80s", "stranger-things"]
+    },
+    {
+      "id": "002",
+      "name": "Space Cowboy",
+      "description": "宇宙西部劇シューティング！エイリアン海賊を撃ち落とせ。パワーアップ4種、ウェーブ制、ボス戦あり",
+      "created": "2026-02-02T12:30:00+08:00",
+      "path": "002-space-cowboy/",
+      "tags": ["shooter", "arcade", "space", "western"]
     }
   ]
 }
