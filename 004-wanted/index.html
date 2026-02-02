@@ -273,47 +273,62 @@
         const holes = document.querySelectorAll('.hole');
         const posters = document.querySelectorAll('.poster');
         
-        holes.forEach((hole, i) => {
-            hole.addEventListener('click', () => {
-                if (!gameRunning) return;
+        function handleHoleHit(i) {
+            if (!gameRunning) return;
+            
+            const poster = posters[i];
+            const char = poster.textContent;
+            
+            if (!poster.classList.contains('active')) return;
+            
+            poster.classList.remove('active');
+            poster.classList.add('hit');
+            setTimeout(() => poster.classList.remove('hit'), 200);
+            return { poster, char };
+        }
+        
+        function processHoleHit(hole, i) {
+            const result = handleHoleHit(i);
+            if (!result) return;
+            const { poster, char } = result;
+            
+            if (outlaws.includes(char)) {
+                // Hit outlaw!
+                combo++;
+                const points = 10 * (1 + Math.floor(combo / 3));
+                score += points;
+                playHit();
+                showPopup(hole, `+${points}`, '#FFD700');
                 
-                const poster = posters[i];
-                const char = poster.textContent;
-                
-                if (!poster.classList.contains('active')) return;
-                
-                poster.classList.remove('active');
-                poster.classList.add('hit');
-                setTimeout(() => poster.classList.remove('hit'), 200);
-                
-                if (outlaws.includes(char)) {
-                    // Hit outlaw!
-                    combo++;
-                    const points = 10 * (1 + Math.floor(combo / 3));
-                    score += points;
-                    playHit();
-                    showPopup(hole, `+${points}`, '#FFD700');
-                    
-                    if (combo > 0 && combo % 5 === 0) {
-                        showCombo(`${combo}x COMBO!`);
-                        playCombo();
-                    }
-                } else if (char === sheriff) {
-                    // Hit sheriff! Penalty!
-                    combo = 0;
-                    score = Math.max(0, score - 50);
-                    playMiss();
-                    showPopup(hole, '-50', '#FF0000');
-                    showCombo('💀 SHERIFF!');
-                } else if (char === innocent) {
-                    // Hit innocent! Small penalty
-                    combo = 0;
-                    score = Math.max(0, score - 20);
-                    playMiss();
-                    showPopup(hole, '-20', '#FF6600');
+                if (combo > 0 && combo % 5 === 0) {
+                    showCombo(`${combo}x COMBO!`);
+                    playCombo();
                 }
-                
-                updateUI();
+            } else if (char === sheriff) {
+                // Hit sheriff! Penalty!
+                combo = 0;
+                score = Math.max(0, score - 50);
+                playMiss();
+                showPopup(hole, '-50', '#FF0000');
+                showCombo('💀 SHERIFF!');
+            } else if (char === innocent) {
+                // Hit innocent! Small penalty
+                combo = 0;
+                score = Math.max(0, score - 20);
+                playMiss();
+                showPopup(hole, '-20', '#FF6600');
+            }
+            
+            updateUI();
+        }
+        
+        holes.forEach((hole, i) => {
+            // Click support
+            hole.addEventListener('click', () => processHoleHit(hole, i));
+            // Touch support (faster response on mobile)
+            hole.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                processHoleHit(hole, i);
             });
         });
         

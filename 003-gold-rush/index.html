@@ -511,6 +511,36 @@
             }
         });
         
+        // Touch controls for mobile buttons
+        document.querySelectorAll('.mobile-btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const onclick = btn.getAttribute('onclick');
+                if (onclick) eval(onclick);
+            });
+        });
+        
+        // Swipe controls on canvas
+        let touchStartX = 0, touchStartY = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            if (!gameRunning) startGame();
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 30) setDirection(1, 0);  // Right
+                else if (dx < -30) setDirection(-1, 0);  // Left
+            } else {
+                if (dy > 30) setDirection(0, 1);  // Down
+                else if (dy < -30) setDirection(0, -1);  // Up
+            }
+        });
+        
         // Initial draw
         initGame();
         draw();

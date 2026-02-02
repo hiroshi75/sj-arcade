@@ -361,13 +361,18 @@
             return `${min}:${sec.toString().padStart(2, '0')}`;
         }
         
-        // Difficulty buttons
+        // Difficulty buttons (click + touch)
         document.querySelectorAll('.diff-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            const handleDiffSelect = () => {
                 document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 gridSize = parseInt(btn.dataset.size);
                 startGame();
+            };
+            btn.addEventListener('click', handleDiffSelect);
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                handleDiffSelect();
             });
         });
         
@@ -401,9 +406,13 @@
                 </div>
             `).join('');
             
-            // Add click handlers
+            // Add click and touch handlers
             document.querySelectorAll('.card').forEach(card => {
                 card.addEventListener('click', () => flipCard(card));
+                card.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    flipCard(card);
+                });
             });
             
             // Update UI
