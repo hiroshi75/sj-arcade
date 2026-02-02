@@ -58,7 +58,7 @@
         /* Stats bar */
         #stats-bar {
             display: none;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: 10px;
             padding: 10px;
             background: #1a1a1a;
@@ -67,6 +67,9 @@
             font-size: 10px;
         }
         #stats-bar.visible { display: grid; }
+        .stat-value.rep-good { color: #33ff33; }
+        .stat-value.rep-bad { color: #ff3333; }
+        .stat-value.rep-neutral { color: #ffcc00; }
         .stat { display: flex; justify-content: space-between; }
         .stat-label { color: #999; }
         .stat-value { color: #ffcc00; }
@@ -285,7 +288,7 @@
             <div class="stat"><span class="stat-label">DEX</span><span class="stat-value" id="dex">--</span></div>
             <div class="stat"><span class="stat-label">LCK</span><span class="stat-value" id="lck">--</span></div>
             <div class="stat"><span class="stat-label">GOLD</span><span class="stat-value gold" id="gold">--</span></div>
-            <div class="stat"><span class="stat-label">DAY</span><span class="stat-value" id="day">--</span></div>
+            <div class="stat"><span class="stat-label">REP</span><span class="stat-value rep-neutral" id="rep">--</span></div>
         </div>
         
         <div id="combat-area">
@@ -323,6 +326,77 @@
     </div>
     
     <script>
+        // === SOUND SYSTEM ===
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+        }
+        
+        function playSound(type) {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            switch(type) {
+                case 'gunshot':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                    break;
+                case 'coin':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+                    break;
+                case 'hit':
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+                    break;
+                case 'victory':
+                    [523, 659, 784].forEach((freq, i) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g); g.connect(audioCtx.destination);
+                        o.type = 'sine';
+                        o.frequency.value = freq;
+                        g.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.15);
+                        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.15 + 0.3);
+                        o.start(audioCtx.currentTime + i * 0.15);
+                        o.stop(audioCtx.currentTime + i * 0.15 + 0.3);
+                    });
+                    break;
+                case 'death':
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+                    break;
+                case 'click':
+                    osc.type = 'sine';
+                    osc.frequency.value = 600;
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+                    break;
+            }
+        }
+        
         // Game state
         let player = null;
         let currentScene = null;
@@ -331,35 +405,39 @@
         let inCombat = false;
         let currentEnemy = null;
         
-        // Character classes
+        // Character classes with special abilities
         const CLASSES = {
             gunslinger: {
                 name: 'Gunslinger',
                 icon: '🔫',
                 desc: 'Fast and deadly. Lives by the gun.',
                 hp: 80, str: 12, dex: 14, lck: 8,
-                startItems: ['revolver', 'bullets_12']
+                startItems: ['revolver', 'bullets_12'],
+                special: { name: 'Fan the Hammer', desc: '3 rapid shots (3x damage)', cooldown: 3, dmgMult: 3 }
             },
             sheriff: {
                 name: 'Sheriff',
                 icon: '⭐',
                 desc: 'Tough and righteous. The law of the land.',
                 hp: 100, str: 10, dex: 10, lck: 10,
-                startItems: ['badge', 'revolver', 'bandage']
+                startItems: ['badge', 'revolver', 'bandage'],
+                special: { name: 'Stand Your Ground', desc: 'Heal 30 HP & +5 DEF this turn', cooldown: 4, heal: 30 }
             },
             outlaw: {
                 name: 'Outlaw',
                 icon: '🤠',
                 desc: 'Lucky and cunning. Takes what they want.',
                 hp: 70, str: 8, dex: 12, lck: 14,
-                startItems: ['knife', 'lockpick', 'whiskey']
+                startItems: ['knife', 'lockpick', 'whiskey'],
+                special: { name: 'Dirty Trick', desc: 'Stun enemy (skip their turn) + steal gold', cooldown: 3, stun: true }
             },
             prospector: {
                 name: 'Prospector',
                 icon: '⛏️',
                 desc: 'Hardy and lucky. Seeking fortune.',
                 hp: 90, str: 14, dex: 6, lck: 12,
-                startItems: ['pickaxe', 'dynamite', 'gold_nugget']
+                startItems: ['pickaxe', 'dynamite', 'gold_nugget'],
+                special: { name: 'Dynamite Blast', desc: 'Massive explosion (50 damage)', cooldown: 5, flatDmg: 50 }
             }
         };
         
@@ -386,6 +464,10 @@
             wolf: { name: 'Wild Wolf', icon: '🐺', hp: 30, str: 10, dex: 12, gold: 5 },
             snake: { name: 'Rattlesnake', icon: '🐍', hp: 15, str: 15, dex: 14, gold: 0 },
             bear: { name: 'Grizzly Bear', icon: '🐻', hp: 80, str: 18, dex: 6, gold: 10 },
+            scorpion: { name: 'Giant Scorpion', icon: '🦂', hp: 25, str: 12, dex: 16, gold: 8 },
+            vulture: { name: 'Vulture Swarm', icon: '🦅', hp: 35, str: 6, dex: 18, gold: 3 },
+            coyote: { name: 'Coyote Pack', icon: '🐕', hp: 45, str: 9, dex: 14, gold: 12 },
+            desperado: { name: 'Desperado', icon: '🔫', hp: 70, str: 14, dex: 12, gold: 55 },
             boss_sheriff: { name: 'Corrupt Sheriff', icon: '👮', hp: 100, str: 14, dex: 12, gold: 100 },
             boss_gang: { name: 'Gang Leader', icon: '💀', hp: 120, str: 16, dex: 14, gold: 150 }
         };
@@ -476,8 +558,11 @@
                 gold: 10,
                 inventory: [...classData.startItems],
                 reputation: 0,
-                kills: 0
+                kills: 0,
+                specialCooldown: 0
             };
+            
+            playSound('click');
             
             statsBar.classList.add('visible');
             updateStats();
@@ -491,7 +576,12 @@
             document.getElementById('dex').textContent = player.dex;
             document.getElementById('lck').textContent = player.lck;
             document.getElementById('gold').textContent = player.gold;
-            document.getElementById('day').textContent = gameDay;
+            
+            // Reputation display
+            const repEl = document.getElementById('rep');
+            const repValue = player.reputation;
+            repEl.textContent = repValue >= 0 ? `+${repValue}` : repValue;
+            repEl.className = 'stat-value ' + (repValue > 0 ? 'rep-good' : repValue < 0 ? 'rep-bad' : 'rep-neutral');
         }
         
         function addStory(type, text) {
@@ -572,9 +662,11 @@
                     let result;
                     if (roll >= 18) {
                         player.gold += 30;
+                        playSound('coin'); playSound('victory');
                         result = `<p class="loot">🎉 JACKPOT! You clean out the table! +$30 gold!</p>`;
                     } else if (roll >= 12) {
                         player.gold += 10;
+                        playSound('coin');
                         result = `<p class="loot">You win the hand! +$10 gold</p>`;
                     } else if (roll >= 6) {
                         result = `<p class="narrator">You break even. The cards weren't with you today.</p>`;
@@ -582,6 +674,7 @@
                         player.gold += 10;
                     } else {
                         player.gold -= 10;
+                        playSound('hit');
                         result = `<p class="combat">Bad luck! You lose $10 gold.</p>`;
                     }
                     updateStats();
@@ -822,6 +915,32 @@
                     <p class="narrator">Your name echoes through the frontier. ${player.name} the ${player.classData.name} - a legend of the West!</p>
                 `,
                 choices: []
+            },
+            ending: {
+                text: () => `
+                    <p class="narrator">🌅 THE END 🌅</p>
+                    <p class="narrator">The dust settles over the canyon. Black Pete lies defeated at your feet.</p>
+                    <p class="dialogue">"You... you're faster than anyone I've ever seen,"</p> he gasps.
+                    <p class="narrator">Word of your victory spreads like wildfire across the frontier.</p>
+                    <p class="narrator">When you return to Dusty Gulch, the townsfolk gather in the streets.</p>
+                    <p class="dialogue">"Three cheers for ${player.name}!"</p> the crowd roars.
+                    <p class="narrator">The mayor steps forward with a golden sheriff's star.</p>
+                    <p class="dialogue">"This town owes you everything. From this day forward, you are the true law of Dusty Gulch."</p>
+                    <p class="loot">🏆 YOU ARE NOW A LEGEND OF THE WEST! 🏆</p>
+                    <p class="system">Final Stats:</p>
+                    <p class="system">💰 Gold: ${player.gold}</p>
+                    <p class="system">💀 Enemies Defeated: ${player.kills}</p>
+                    <p class="system">⭐ Reputation: ${player.reputation}</p>
+                    <p class="narrator">The frontier will remember your name forever...</p>
+                    <p class="narrator">${player.name} the ${player.classData.name}</p>
+                `,
+                choices: [
+                    { text: '🔄 Play Again', action: 'restart' }
+                ]
+            },
+            restart: {
+                text: () => { startGame(); return ''; },
+                choices: []
             }
         };
         
@@ -895,11 +1014,19 @@
             const hasBandage = player.inventory.includes('bandage');
             const hasWhiskey = player.inventory.includes('whiskey');
             const hasDynamite = player.inventory.includes('dynamite');
+            const special = player.classData.special;
+            const canUseSpecial = player.specialCooldown === 0;
             
             const choices = [
                 { text: '⚔️ Attack', action: 'combat_attack' },
                 { text: '🛡️ Defend', action: 'combat_defend' }
             ];
+            
+            // Add special ability
+            const specialText = canUseSpecial 
+                ? `⚡ ${special.name}` 
+                : `⚡ ${special.name} (${player.specialCooldown} turns)`;
+            choices.push({ text: specialText, action: 'combat_special', disabled: !canUseSpecial });
             
             if (hasBandage) choices.push({ text: '🩹 Use Bandage', action: 'combat_bandage' });
             if (hasWhiskey) choices.push({ text: '🥃 Drink Whiskey', action: 'combat_whiskey' });
@@ -916,6 +1043,8 @@
             const critRoll = rollDice(20);
             const isCrit = critRoll >= 18;
             
+            playSound('gunshot');
+            
             if (hitRoll >= 8) {
                 let damage = weaponDamage + Math.floor(player.str / 2) + rollDice(6);
                 if (isCrit) damage *= 2;
@@ -926,6 +1055,46 @@
             } else {
                 addCombatLog(`🎲 Hit roll: ${hitRoll} - MISS!`, 'system');
             }
+            
+            if (player.specialCooldown > 0) player.specialCooldown--;
+        }
+        
+        // Special ability function
+        function useSpecialAbility() {
+            const special = player.classData.special;
+            playSound('gunshot');
+            playSound('gunshot');
+            
+            if (special.dmgMult) {
+                // Gunslinger: Fan the Hammer
+                const weapon = player.inventory.find(i => ITEMS[i]?.type === 'weapon');
+                const weaponDamage = weapon ? ITEMS[weapon].damage : 5;
+                let damage = (weaponDamage + player.str) * special.dmgMult;
+                currentEnemy.hp -= damage;
+                addCombatLog(`⚡ ${special.name}! 3 rapid shots!`, 'loot');
+                addCombatLog(`💥 ${damage} total damage!`, 'combat');
+            } else if (special.heal) {
+                // Sheriff: Stand Your Ground
+                player.hp = Math.min(player.maxHp, player.hp + special.heal);
+                addCombatLog(`⚡ ${special.name}! +${special.heal} HP restored!`, 'loot');
+                playSound('coin');
+            } else if (special.stun) {
+                // Outlaw: Dirty Trick
+                const stolenGold = Math.min(currentEnemy.gold, 10 + rollDice(10));
+                player.gold += stolenGold;
+                currentEnemy.stunned = true;
+                addCombatLog(`⚡ ${special.name}! Enemy stunned!`, 'loot');
+                addCombatLog(`💰 Stole ${stolenGold} gold!`, 'loot');
+                playSound('coin');
+            } else if (special.flatDmg) {
+                // Prospector: Dynamite Blast
+                currentEnemy.hp -= special.flatDmg;
+                addCombatLog(`⚡ ${special.name}! 💥 BOOM!`, 'loot');
+                addCombatLog(`🧨 ${special.flatDmg} explosion damage!`, 'combat');
+            }
+            
+            player.specialCooldown = special.cooldown;
+            updateStats();
         }
         
         function enemyAttack(defended = false) {
@@ -937,6 +1106,7 @@
                 if (defended) damage = Math.floor(damage / 2);
                 
                 player.hp -= damage;
+                playSound('hit');
                 addCombatLog(`${currentEnemy.icon} attacks! 🎲 ${hitRoll} vs ${playerDodge}`, 'system');
                 addCombatLog(`You take <span class="dice-roll">${damage}</span> damage!${defended ? ' (defended)' : ''}`, 'combat');
             } else {
@@ -945,33 +1115,45 @@
         }
         
         function combatTurn(action) {
+            // Check if enemy is stunned
+            const enemyStunned = currentEnemy.stunned;
+            if (enemyStunned) currentEnemy.stunned = false;
+            
             switch(action) {
                 case 'combat_attack':
                     playerAttack();
-                    if (currentEnemy.hp > 0) enemyAttack();
+                    if (currentEnemy.hp > 0 && !enemyStunned) enemyAttack();
                     break;
                 case 'combat_defend':
                     addCombatLog('You brace for the attack...', 'system');
-                    enemyAttack(true);
+                    if (!enemyStunned) enemyAttack(true);
+                    else addCombatLog('Enemy is stunned!', 'loot');
+                    break;
+                case 'combat_special':
+                    useSpecialAbility();
+                    if (currentEnemy.hp > 0 && !enemyStunned && !player.classData.special.stun) enemyAttack();
                     break;
                 case 'combat_bandage':
                     player.inventory = player.inventory.filter(i => i !== 'bandage');
                     player.hp = Math.min(player.maxHp, player.hp + 20);
                     addCombatLog('🩹 You use a bandage! +20 HP', 'loot');
-                    enemyAttack();
+                    playSound('coin');
+                    if (!enemyStunned) enemyAttack();
                     break;
                 case 'combat_whiskey':
                     player.inventory = player.inventory.filter(i => i !== 'whiskey');
                     player.hp = Math.min(player.maxHp, player.hp + 15);
                     player.str += 2;
                     addCombatLog('🥃 Whiskey! +15 HP, +2 STR!', 'loot');
-                    enemyAttack();
+                    playSound('coin');
+                    if (!enemyStunned) enemyAttack();
                     break;
                 case 'combat_dynamite':
                     player.inventory = player.inventory.filter(i => i !== 'dynamite');
                     currentEnemy.hp -= 40;
                     addCombatLog('🧨 BOOM! 40 damage!', 'combat');
-                    if (currentEnemy.hp > 0) enemyAttack();
+                    playSound('hit');
+                    if (currentEnemy.hp > 0 && !enemyStunned) enemyAttack();
                     break;
             }
             
@@ -993,20 +1175,29 @@
             
             if (victory) {
                 player.kills++;
+                playSound('victory');
                 const goldEarned = currentEnemy.gold + rollDice(10);
                 player.gold += goldEarned;
+                
+                // Reputation gain for defeating outlaws
+                if (['bandit', 'outlaw', 'desperado'].includes(currentEnemy.name?.toLowerCase())) {
+                    player.reputation += 5;
+                    addStory('system', '⭐ Reputation +5 (brought outlaw to justice)');
+                }
+                
                 updateStats();
                 
                 addStory('loot', `🏆 Victory! You defeated the ${currentEnemy.name}!`);
                 addStory('loot', `+${goldEarned} gold earned!`);
                 
-                // Check for boss victory
+                // Check for boss victory - Show epic ending
                 if (currentEnemy.name === 'Gang Leader') {
                     player.gold += 100; // Bounty
+                    player.reputation += 50;
                     updateStats();
                     addStory('loot', `💰 BOUNTY COLLECTED: +$100 gold!`);
-                    addStory('narrator', `Black Pete is defeated! You're a hero of Dusty Gulch!`);
-                    showGameOver(true);
+                    addStory('system', '⭐ Reputation +50 (legendary feat!)');
+                    showScene('ending');
                     return;
                 }
                 
@@ -1015,6 +1206,7 @@
                     { text: '🏜️ Continue exploring', action: 'wilderness' }
                 ]);
             } else {
+                playSound('death');
                 showGameOver(false);
             }
         }
