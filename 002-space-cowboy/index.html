@@ -297,25 +297,25 @@
         }
         
         function spawnWave() {
-            const numEnemies = 3 + wave * 2;
+            const numEnemies = 2 + Math.floor(wave * 0.8);  // Slower scaling: 2,3,4,4,5,5,6...
             for (let i = 0; i < numEnemies; i++) {
                 setTimeout(() => {
                     if (gameState === 'playing') {
                         const rand = Math.random();
-                        if (wave >= 3 && rand < 0.2) {
+                        if (wave >= 5 && rand < 0.15) {  // Shooters from wave 5, less frequent
                             spawnEnemy('shooter');
                         } else {
                             spawnEnemy('grunt');
                         }
                     }
-                }, i * 500);
+                }, i * 800);  // Slower spawn rate
             }
             
             // Boss every 5 waves
             if (wave % 5 === 0) {
                 setTimeout(() => {
                     if (gameState === 'playing') spawnEnemy('boss');
-                }, numEnemies * 500 + 1000);
+                }, numEnemies * 800 + 1500);
             }
         }
         
