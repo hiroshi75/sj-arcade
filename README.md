@@ -16,16 +16,54 @@ Stranger Things風の80年代アメリカ田舎町アドベンチャー
 - 🏫 Hawkins High - 運勢占い
 - 📻 Radio Shack - クイックドロー射撃
 
-**スクリーンショット:**
-
 ![Arcade Portal](screenshots/portal.png)
 *ゲーム選択画面*
 
 ![Hawkins Title](screenshots/hawkins-title.png)
 *Hawkins 1984 タイトル*
 
-![Slot Machine](screenshots/slot.png)
-*Palace Arcade スロットマシン*
+---
+
+### #002 - Space Cowboy 🚀🤠
+宇宙を駆けるカウボーイのシューティングゲーム
+
+**特徴:**
+- ← → / A D キーで移動、スペース/クリックで射撃
+- HP制（弾=3ダメージ、敵衝突=5ダメージ）
+- ライフ3つ、無敵時間3秒
+- パワーアップアイテム収集
+- ウェーブ制の難易度上昇
+
+![Space Cowboy](screenshots/space-cowboy.png)
+*DESTROY ALIEN BANDITS!*
+
+---
+
+### #003 - Gold Rush Express 🚂💰
+汽車を走らせて金貨を集めるスネークゲーム
+
+**特徴:**
+- 矢印キーで方向転換
+- 金貨を集めて列車を伸ばす
+- サボテン🌵と岩🪨を避けろ！
+- 西部開拓時代の鉄道冒険
+
+![Gold Rush Express](screenshots/gold-rush.png)
+*Sheriff Jim's Railroad Adventure*
+
+---
+
+### #004 - Wanted! 🎯🤠
+お尋ね者を捕まえるモグラ叩き風リアクションゲーム
+
+**特徴:**
+- お尋ね者👤を叩いてスコアゲット
+- 市民👨‍🌾を叩くとペナルティ！
+- コンボシステムで高得点
+- 30秒のタイムアタック
+
+![Wanted!](screenshots/wanted.png)
+*Quick on the draw, Sheriff!*
 
 ## 🚀 How to Play
 
