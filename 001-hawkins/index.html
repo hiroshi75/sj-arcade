@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🕹️ Hawkins, Indiana - 1984</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            image-rendering: pixelated;
+        }
+        
+        body {
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Press Start 2P', monospace;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 960px;
+            height: 720px;
+            background: #1a1a2e;
+            border: 8px solid #4a4a6a;
+            box-shadow: 
+                0 0 0 4px #2a2a4a,
+                0 0 40px rgba(255, 0, 100, 0.3),
+                inset 0 0 60px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+        
+        /* CRT Effect */
+        #game-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        #game-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+            pointer-events: none;
+            z-index: 101;
+        }
+        
+        canvas {
+            display: block;
+        }
+        
+        #ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+        
+        #title-screen, #location-screen, #game-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        #title-screen {
+            background: linear-gradient(180deg, #0f0f23 0%, #1a1a3e 50%, #0f0f23 100%);
+        }
+        
+        .title {
+            color: #ff6b6b;
+            font-size: 42px;
+            text-shadow: 
+                4px 4px 0 #8b0000,
+                0 0 20px #ff0000;
+            margin-bottom: 10px;
+            animation: flicker 0.1s infinite alternate;
+        }
+        
+        .subtitle {
+            color: #ffd93d;
+            font-size: 16px;
+            margin-bottom: 50px;
+            text-shadow: 2px 2px 0 #8b6914;
+        }
+        
+        @keyframes flicker {
+            0% { opacity: 1; }
+            100% { opacity: 0.95; }
+        }
+        
+        .menu-item {
+            color: #6bcb77;
+            font-size: 14px;
+            padding: 15px 30px;
+            margin: 8px;
+            cursor: pointer;
+            transition: all 0.1s;
+            text-shadow: 2px 2px 0 #2d5a30;
+            border: 3px solid transparent;
+        }
+        
+        .menu-item:hover {
+            color: #fff;
+            text-shadow: 0 0 10px #6bcb77, 2px 2px 0 #2d5a30;
+            border-color: #6bcb77;
+            transform: scale(1.05);
+        }
+        
+        .pixel-art {
+            display: grid;
+            gap: 0;
+            margin: 20px 0;
+        }
+        
+        /* Location Screen */
+        #location-screen {
+            background: #1a1a2e;
+        }
+        
+        .location-title {
+            color: #4ecdc4;
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #1a6b66;
+        }
+        
+        .location-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            padding: 20px;
+        }
+        
+        .location-btn {
+            width: 240px;
+            height: 130px;
+            background: #2a2a4e;
+            border: 4px solid #4a4a7a;
+            color: #fff;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.1s;
+        }
+        
+        .location-btn:hover {
+            background: #3a3a6e;
+            border-color: #ff6b6b;
+            transform: translateY(-4px);
+            box-shadow: 0 4px 0 #1a1a2e;
+        }
+        
+        .location-btn .icon {
+            font-size: 36px;
+        }
+        
+        .back-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #8b0000;
+            border: 3px solid #ff6b6b;
+            color: #fff;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        
+        .back-btn:hover {
+            background: #a00;
+        }
+        
+        /* Game Screen */
+        #game-screen {
+            background: #1a1a2e;
+            padding: 20px;
+        }
+        
+        .game-title {
+            color: #ffd93d;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .game-area {
+            background: #0a0a1e;
+            border: 4px solid #4a4a7a;
+            padding: 30px;
+            min-width: 700px;
+            min-height: 420px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .game-text {
+            color: #6bcb77;
+            font-size: 12px;
+            line-height: 1.8;
+            text-align: center;
+            margin: 12px 0;
+        }
+        
+        .game-btn {
+            padding: 12px 24px;
+            margin: 5px;
+            background: #2a2a4e;
+            border: 3px solid #6bcb77;
+            color: #6bcb77;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        
+        .game-btn:hover {
+            background: #6bcb77;
+            color: #0a0a1e;
+        }
+        
+        .game-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Slot Machine */
+        .slot-container {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .slot-reel {
+            width: 90px;
+            height: 110px;
+            background: #fff;
+            border: 4px solid #ffd93d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 54px;
+            overflow: hidden;
+        }
+        
+        .slot-reel.spinning {
+            animation: spin 0.1s infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: translateY(-5px); }
+            50% { transform: translateY(5px); }
+            100% { transform: translateY(-5px); }
+        }
+        
+        /* Cards */
+        .card {
+            width: 80px;
+            height: 112px;
+            background: #fff;
+            border: 3px solid #333;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 8px;
+            font-family: serif;
+        }
+        
+        .card.red { color: #d00; }
+        .card.black { color: #000; }
+        .card.hidden {
+            background: linear-gradient(45deg, #1a4a8a 25%, #2a5a9a 25%, #2a5a9a 50%, #1a4a8a 50%, #1a4a8a 75%, #2a5a9a 75%);
+            background-size: 8px 8px;
+        }
+        
+        .cards-row {
+            display: flex;
+            margin: 10px 0;
+        }
+        
+        /* Stats */
+        .stats-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 60;
+        }
+        
+        .stat {
+            color: #ffd93d;
+            font-size: 14px;
+            text-shadow: 2px 2px 0 #000;
+        }
+        
+        /* Pixel Character */
+        .character {
+            width: 64px;
+            height: 64px;
+            margin: 10px;
+        }
+        
+        /* Fortune */
+        .fortune-card {
+            background: linear-gradient(135deg, #2a1a4a, #4a2a6a);
+            border: 4px solid #8a6aaa;
+            padding: 40px;
+            text-align: center;
+            max-width: 550px;
+        }
+        
+        .fortune-symbol {
+            font-size: 64px;
+            margin: 20px 0;
+        }
+        
+        .fortune-text {
+            color: #dab6fc;
+            font-size: 12px;
+            line-height: 2;
+        }
+        
+        /* Quick Draw */
+        .target-area {
+            width: 500px;
+            height: 300px;
+            background: #3a2a1a;
+            border: 4px solid #6a4a2a;
+            position: relative;
+            cursor: crosshair;
+            overflow: hidden;
+        }
+        
+        .target {
+            position: absolute;
+            width: 50px;
+            height: 75px;
+            background: #8b4513;
+            cursor: pointer;
+            transition: none;
+        }
+        
+        .target::before {
+            content: '🤠';
+            font-size: 40px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .target.hit {
+            background: #4a4a4a;
+        }
+        
+        .target.hit::before {
+            content: '💀';
+        }
+        
+        /* Demogorgon Hunt */
+        .forest-area {
+            width: 580px;
+            height: 350px;
+            background: linear-gradient(180deg, #0a1a0a 0%, #1a2a1a 100%);
+            border: 4px solid #2a4a2a;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tree {
+            position: absolute;
+            font-size: 40px;
+        }
+        
+        .player-icon {
+            position: absolute;
+            font-size: 36px;
+            transition: all 0.1s;
+            z-index: 10;
+            filter: drop-shadow(0 0 10px #ffff00);
+        }
+        
+        .monster {
+            position: absolute;
+            font-size: 38px;
+            z-index: 5;
+            animation: monsterPulse 0.5s infinite alternate;
+        }
+        
+        .neon-text {
+            animation: neon 1.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes neon {
+            from { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #ff00de, 0 0 30px #ff00de; }
+            to { text-shadow: 0 0 2px #fff, 0 0 5px #fff, 0 0 10px #ff00de, 0 0 15px #ff00de; }
+        }
+        
+        @keyframes monsterPulse {
+            from { filter: drop-shadow(0 0 5px #ff0000); transform: scale(1); }
+            to { filter: drop-shadow(0 0 15px #ff0000); transform: scale(1.1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Title Screen -->
+        <div id="title-screen">
+            <div class="title neon-text">HAWKINS</div>
+            <div class="subtitle">INDIANA ★ 1984</div>
+            
+            <!-- Pixel Art Town -->
+            <div style="font-size: 48px; margin: 20px 0;">🏘️</div>
+            
+            <div class="menu-item" onclick="showLocations()">▶ START GAME</div>
+            <div class="menu-item" onclick="showCredits()">▶ CREDITS</div>
+            
+            <div style="color: #4a4a6a; font-size: 8px; margin-top: 40px;">
+                PRESS START OR CLICK TO BEGIN
+            </div>
+        </div>
+        
+        <!-- Location Select Screen -->
+        <div id="location-screen" class="hidden">
+            <div class="stats-bar">
+                <div class="stat">💰 $<span id="money">100</span></div>
+                <div class="stat">❤️ <span id="health">100</span></div>
+                <div class="stat">⭐ <span id="score">0</span></div>
+            </div>
+            
+            <div class="location-title">🗺️ WHERE TO, STRANGER?</div>
+            
+            <div class="location-grid">
+                <div class="location-btn" onclick="goToLocation('arcade')">
+                    <span class="icon">🕹️</span>
+                    <span>PALACE ARCADE</span>
+                </div>
+                <div class="location-btn" onclick="goToLocation('diner')">
+                    <span class="icon">🍔</span>
+                    <span>BENNY'S DINER</span>
+                </div>
+                <div class="location-btn" onclick="goToLocation('forest')">
+                    <span class="icon">🌲</span>
+                    <span>MIRKWOOD FOREST</span>
+                </div>
+                <div class="location-btn" onclick="goToLocation('lab')">
+                    <span class="icon">🔬</span>
+                    <span>HAWKINS LAB</span>
+                </div>
+                <div class="location-btn" onclick="goToLocation('school')">
+                    <span class="icon">🏫</span>
+                    <span>HAWKINS HIGH</span>
+                </div>
+                <div class="location-btn" onclick="goToLocation('store')">
+                    <span class="icon">📻</span>
+                    <span>RADIO SHACK</span>
+                </div>
+            </div>
+            
+            <button class="back-btn" onclick="showTitle()">← BACK TO TITLE</button>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden">
+            <div class="stats-bar">
+                <div class="stat">💰 $<span id="money2">100</span></div>
+                <div class="stat">❤️ <span id="health2">100</span></div>
+                <div class="stat">⭐ <span id="score2">0</span></div>
+            </div>
+            
+            <div class="game-title" id="current-game-title">GAME</div>
+            <div class="game-area" id="game-area">
+                <!-- Game content loaded dynamically -->
+            </div>
+            <button class="back-btn" onclick="showLocations()" style="margin-top: 15px;">← BACK TO MAP</button>
+        </div>
+    </div>
+    
+    <script>
+        // Game State
+        const state = {
+            money: 100,
+            health: 100,
+            score: 0,
+            currentLocation: null
+        };
+        
+        // Sound effects (8-bit style using Web Audio)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(freq, duration, type = 'square') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        function playBleep() { playSound(880, 0.1); }
+        function playWin() { 
+            playSound(523, 0.1); 
+            setTimeout(() => playSound(659, 0.1), 100);
+            setTimeout(() => playSound(784, 0.2), 200);
+        }
+        function playLose() { playSound(200, 0.3, 'sawtooth'); }
+        
+        // Update UI
+        function updateStats() {
+            document.getElementById('money').textContent = state.money;
+            document.getElementById('money2').textContent = state.money;
+            document.getElementById('health').textContent = state.health;
+            document.getElementById('health2').textContent = state.health;
+            document.getElementById('score').textContent = state.score;
+            document.getElementById('score2').textContent = state.score;
+        }
+        
+        // Screen Navigation
+        function showTitle() {
+            playBleep();
+            document.getElementById('title-screen').classList.remove('hidden');
+            document.getElementById('location-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+        }
+        
+        function showLocations() {
+            playBleep();
+            document.getElementById('title-screen').classList.add('hidden');
+            document.getElementById('location-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            updateStats();
+        }
+        
+        function showCredits() {
+            playBleep();
+            alert('🎮 HAWKINS 1984 🎮\n\nCreated by Sheriff Jim 🤠\nFor Hiroshi\n\n© 2026 OpenClaw');
+        }
+        
+        function goToLocation(loc) {
+            playBleep();
+            state.currentLocation = loc;
+            document.getElementById('title-screen').classList.add('hidden');
+            document.getElementById('location-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            const games = {
+                arcade: { title: '🕹️ PALACE ARCADE - SLOT MACHINE', game: slotMachine },
+                diner: { title: '🍔 BENNY\'S DINER - BLACKJACK', game: blackjack },
+                forest: { title: '🌲 MIRKWOOD - DEMOGORGON HUNT', game: demogorgonHunt },
+                lab: { title: '🔬 HAWKINS LAB - PSYCHIC POWER', game: psychicPower },
+                school: { title: '🏫 HAWKINS HIGH - FORTUNE', game: fortune },
+                store: { title: '📻 RADIO SHACK - QUICK DRAW', game: quickDraw }
+            };
+            
+            document.getElementById('current-game-title').textContent = games[loc].title;
+            games[loc].game();
+            updateStats();
+        }
+        
+        // ===== SLOT MACHINE =====
+        function slotMachine() {
+            const symbols = ['🍒', '🍋', '🔔', '⭐', '7️⃣', '👽'];
+            const area = document.getElementById('game-area');
+            
+            area.innerHTML = `
+                <div class="game-text">INSERT COIN AND PULL THE LEVER!</div>
+                <div class="slot-container">
+                    <div class="slot-reel" id="reel1">❓</div>
+                    <div class="slot-reel" id="reel2">❓</div>
+                    <div class="slot-reel" id="reel3">❓</div>
+                </div>
+                <div class="game-text" id="slot-result"></div>
+                <button class="game-btn" onclick="spinSlots()">🎰 SPIN ($10)</button>
+            `;
+            
+            window.spinSlots = function() {
+                if (state.money < 10) {
+                    document.getElementById('slot-result').textContent = 'NOT ENOUGH COINS!';
+                    playLose();
+                    return;
+                }
+                
+                state.money -= 10;
+                updateStats();
+                playBleep();
+                
+                const reels = [
+                    document.getElementById('reel1'),
+                    document.getElementById('reel2'),
+                    document.getElementById('reel3')
+                ];
+                
+                reels.forEach(r => r.classList.add('spinning'));
+                
+                const results = [];
+                reels.forEach((reel, i) => {
+                    setTimeout(() => {
+                        reel.classList.remove('spinning');
+                        const sym = symbols[Math.floor(Math.random() * symbols.length)];
+                        reel.textContent = sym;
+                        results.push(sym);
+                        playSound(440 + i * 100, 0.1);
+                        
+                        if (results.length === 3) {
+                            checkSlotWin(results);
+                        }
+                    }, 500 + i * 300);
+                });
+            };
+            
+            function checkSlotWin(results) {
+                let msg = '';
+                let winnings = 0;
+                
+                if (results[0] === results[1] && results[1] === results[2]) {
+                    if (results[0] === '7️⃣') {
+                        winnings = 500;
+                        msg = '🎉 JACKPOT!!! +$500!!!';
+                    } else if (results[0] === '👽') {
+                        winnings = 300;
+                        msg = '👽 ALIEN INVASION! +$300!';
+                    } else {
+                        winnings = 100;
+                        msg = '🎊 THREE OF A KIND! +$100!';
+                    }
+                    playWin();
+                } else if (results[0] === results[1] || results[1] === results[2] || results[0] === results[2]) {
+                    winnings = 20;
+                    msg = '✨ PAIR! +$20';
+                    playSound(600, 0.15);
+                } else {
+                    msg = 'TRY AGAIN...';
+                    playLose();
+                }
+                
+                state.money += winnings;
+                state.score += winnings;
+                updateStats();
+                document.getElementById('slot-result').textContent = msg;
+            }
+        }
+        
+        // ===== BLACKJACK =====
+        function blackjack() {
+            const suits = ['♠', '♥', '♦', '♣'];
+            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            let playerHand = [];
+            let dealerHand = [];
+            let gameOver = false;
+            
+            const area = document.getElementById('game-area');
+            
+            function dealCard() {
+                return {
+                    suit: suits[Math.floor(Math.random() * 4)],
+                    value: values[Math.floor(Math.random() * 13)]
+                };
+            }
+            
+            function cardValue(card) {
+                if (['J', 'Q', 'K'].includes(card.value)) return 10;
+                if (card.value === 'A') return 11;
+                return parseInt(card.value);
+            }
+            
+            function handValue(hand) {
+                let total = hand.reduce((sum, card) => sum + cardValue(card), 0);
+                let aces = hand.filter(c => c.value === 'A').length;
+                while (total > 21 && aces > 0) {
+                    total -= 10;
+                    aces--;
+                }
+                return total;
+            }
+            
+            function renderCard(card, hidden = false) {
+                if (hidden) return '<div class="card hidden"></div>';
+                const isRed = ['♥', '♦'].includes(card.suit);
+                return `<div class="card ${isRed ? 'red' : 'black'}">${card.value}${card.suit}</div>`;
+            }
+            
+            function render() {
+                area.innerHTML = `
+                    <div class="game-text">DEALER'S HAND (${gameOver ? handValue(dealerHand) : '?'})</div>
+                    <div class="cards-row">
+                        ${dealerHand.map((c, i) => renderCard(c, !gameOver && i === 1)).join('')}
+                    </div>
+                    <div class="game-text">YOUR HAND (${handValue(playerHand)})</div>
+                    <div class="cards-row">
+                        ${playerHand.map(c => renderCard(c)).join('')}
+                    </div>
+                    <div class="game-text" id="bj-result"></div>
+                    ${!gameOver ? `
+                        <div>
+                            <button class="game-btn" onclick="bjHit()">HIT</button>
+                            <button class="game-btn" onclick="bjStand()">STAND</button>
+                        </div>
+                    ` : `
+                        <button class="game-btn" onclick="bjNewGame()">NEW GAME ($20)</button>
+                    `}
+                `;
+            }
+            
+            function startGame() {
+                if (state.money < 20) {
+                    area.innerHTML = '<div class="game-text">NOT ENOUGH MONEY!<br>NEED $20 TO PLAY</div>';
+                    return;
+                }
+                state.money -= 20;
+                updateStats();
+                
+                playerHand = [dealCard(), dealCard()];
+                dealerHand = [dealCard(), dealCard()];
+                gameOver = false;
+                playBleep();
+                render();
+                
+                if (handValue(playerHand) === 21) {
+                    gameOver = true;
+                    state.money += 70;
+                    state.score += 50;
+                    updateStats();
+                    playWin();
+                    render();
+                    document.getElementById('bj-result').textContent = '🎉 BLACKJACK! +$50!';
+                }
+            }
+            
+            window.bjHit = function() {
+                playerHand.push(dealCard());
+                playBleep();
+                
+                if (handValue(playerHand) > 21) {
+                    gameOver = true;
+                    playLose();
+                    render();
+                    document.getElementById('bj-result').textContent = '💥 BUST! YOU LOSE!';
+                } else if (handValue(playerHand) === 21) {
+                    bjStand();
+                } else {
+                    render();
+                }
+            };
+            
+            window.bjStand = function() {
+                gameOver = true;
+                playBleep();
+                
+                while (handValue(dealerHand) < 17) {
+                    dealerHand.push(dealCard());
+                }
+                
+                const pv = handValue(playerHand);
+                const dv = handValue(dealerHand);
+                
+                render();
+                
+                if (dv > 21 || pv > dv) {
+                    state.money += 40;
+                    state.score += 20;
+                    updateStats();
+                    playWin();
+                    document.getElementById('bj-result').textContent = '🎊 YOU WIN! +$20!';
+                } else if (pv === dv) {
+                    state.money += 20;
+                    updateStats();
+                    document.getElementById('bj-result').textContent = '🤝 PUSH! BET RETURNED';
+                } else {
+                    playLose();
+                    document.getElementById('bj-result').textContent = '😢 DEALER WINS!';
+                }
+            };
+            
+            window.bjNewGame = startGame;
+            startGame();
+        }
+        
+        // ===== DEMOGORGON HUNT =====
+        function demogorgonHunt() {
+            const area = document.getElementById('game-area');
+            let playerX = 260, playerY = 160;
+            let monsters = [];
+            let gameActive = false;
+            let huntScore = 0;
+            let timeLeft = 30;
+            let keyHandler = null;
+            
+            function spawnMonster() {
+                monsters.push({
+                    x: Math.random() * 520 + 30,
+                    y: Math.random() * 290 + 30,
+                    alive: true
+                });
+            }
+            
+            function render() {
+                const trees = [];
+                for (let i = 0; i < 12; i++) {
+                    trees.push(`<span class="tree" style="left:${i*50+10}px;top:${Math.random()*60}px">🌲</span>`);
+                    trees.push(`<span class="tree" style="left:${i*50+20}px;bottom:${Math.random()*40}px">🌲</span>`);
+                }
+                
+                area.innerHTML = `
+                    <div class="game-text">🎮 ARROW KEYS = MOVE | SPACE or X = ATTACK</div>
+                    <div class="game-text">⏱️ TIME: ${timeLeft}s | 💀 KILLS: ${huntScore}</div>
+                    <div class="forest-area" id="forest" tabindex="0" style="${gameActive ? 'border-color: #6bcb77; box-shadow: 0 0 20px rgba(107, 203, 119, 0.5);' : ''}">
+                        ${trees.join('')}
+                        <span class="player-icon" id="player" style="left:${playerX}px;top:${playerY}px">🔦</span>
+                        ${monsters.filter(m => m.alive).map(m => 
+                            `<span class="monster" style="left:${m.x}px;top:${m.y}px">👹</span>`
+                        ).join('')}
+                    </div>
+                    ${!gameActive ? `<button class="game-btn" onclick="startHunt()">🌲 START HUNT ($10)</button>` : '<div class="game-text" style="color:#ffd93d;">HUNTING IN PROGRESS...</div>'}
+                `;
+                
+                document.getElementById('forest')?.focus();
+            }
+            
+            window.startHunt = function() {
+                if (state.money < 10) {
+                    alert('Need $10 to hunt!');
+                    return;
+                }
+                state.money -= 10;
+                updateStats();
+                
+                gameActive = true;
+                huntScore = 0;
+                timeLeft = 30;
+                monsters = [];
+                playerX = 180;
+                playerY = 110;
+                
+                for (let i = 0; i < 3; i++) spawnMonster();
+                
+                playBleep();
+                render();
+                
+                const timer = setInterval(() => {
+                    if (!gameActive) {
+                        clearInterval(timer);
+                        return;
+                    }
+                    
+                    timeLeft--;
+                    
+                    // Move monsters toward player
+                    monsters.forEach(m => {
+                        if (!m.alive) return;
+                        const dx = playerX - m.x;
+                        const dy = playerY - m.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist > 0) {
+                            m.x += (dx / dist) * 2;
+                            m.y += (dy / dist) * 2;
+                        }
+                        
+                        // Check collision with player
+                        if (dist < 25) {
+                            state.health -= 10;
+                            updateStats();
+                            playLose();
+                            m.x = Math.random() * 520 + 30;
+                            m.y = Math.random() * 290 + 30;
+                        }
+                    });
+                    
+                    if (timeLeft <= 0 || state.health <= 0) {
+                        gameActive = false;
+                        clearInterval(timer);
+                        
+                        const reward = huntScore * 10;
+                        state.money += reward;
+                        state.score += huntScore * 5;
+                        updateStats();
+                        
+                        render();
+                        area.innerHTML += `<div class="game-text" style="color:#ff6b6b;">HUNT OVER! KILLED ${huntScore} DEMOGORGONS! +$${reward}</div>`;
+                        
+                        if (state.health <= 0) {
+                            state.health = 100;
+                            updateStats();
+                        }
+                    } else {
+                        // Spawn more monsters
+                        if (Math.random() < 0.05) spawnMonster();
+                        render();
+                    }
+                }, 1000);
+                
+                // Remove old handler if exists
+                if (keyHandler) {
+                    document.removeEventListener('keydown', keyHandler);
+                }
+                
+                keyHandler = (e) => {
+                    if (!gameActive) return;
+                    
+                    const speed = 18;
+                    switch(e.key) {
+                        case 'ArrowUp': playerY = Math.max(0, playerY - speed); break;
+                        case 'ArrowDown': playerY = Math.min(320, playerY + speed); break;
+                        case 'ArrowLeft': playerX = Math.max(0, playerX - speed); break;
+                        case 'ArrowRight': playerX = Math.min(550, playerX + speed); break;
+                        case ' ':
+                        case 'x':
+                        case 'X':
+                            // Attack nearby monster
+                            monsters.forEach(m => {
+                                if (!m.alive) return;
+                                const dist = Math.sqrt((playerX-m.x)**2 + (playerY-m.y)**2);
+                                if (dist < 60) {
+                                    m.alive = false;
+                                    huntScore++;
+                                    playWin();
+                                }
+                            });
+                            break;
+                    }
+                    render();
+                    e.preventDefault();
+                };
+                
+                document.addEventListener('keydown', keyHandler);
+            };
+            
+            render();
+        }
+        
+        // ===== PSYCHIC POWER (Lab) =====
+        function psychicPower() {
+            const area = document.getElementById('game-area');
+            let target = Math.floor(Math.random() * 10) + 1;
+            let attempts = 3;
+            
+            area.innerHTML = `
+                <div class="fortune-card">
+                    <div class="fortune-symbol">🧠</div>
+                    <div class="game-text">ELEVEN'S PSYCHIC TEST</div>
+                    <div class="game-text">I'M THINKING OF A NUMBER 1-10...</div>
+                    <div class="game-text">YOU HAVE ${attempts} ATTEMPTS</div>
+                    <div style="margin: 20px 0;">
+                        ${[1,2,3,4,5,6,7,8,9,10].map(n => 
+                            `<button class="game-btn" onclick="guessNumber(${n})" id="btn${n}">${n}</button>`
+                        ).join('')}
+                    </div>
+                    <div class="game-text" id="psychic-result"></div>
+                </div>
+            `;
+            
+            window.guessNumber = function(n) {
+                document.getElementById(`btn${n}`).disabled = true;
+                attempts--;
+                playBleep();
+                
+                if (n === target) {
+                    state.money += 50;
+                    state.score += 30;
+                    updateStats();
+                    playWin();
+                    document.getElementById('psychic-result').innerHTML = 
+                        `<span style="color:#6bcb77;">🎉 CORRECT! THE GATE OPENS! +$50</span>`;
+                    disableAllButtons();
+                } else if (attempts <= 0) {
+                    playLose();
+                    document.getElementById('psychic-result').innerHTML = 
+                        `<span style="color:#ff6b6b;">THE NUMBER WAS ${target}. TRY AGAIN!</span>`;
+                    disableAllButtons();
+                } else {
+                    const hint = n < target ? 'HIGHER...' : 'LOWER...';
+                    document.getElementById('psychic-result').textContent = 
+                        `${hint} (${attempts} attempts left)`;
+                }
+            };
+            
+            function disableAllButtons() {
+                for (let i = 1; i <= 10; i++) {
+                    document.getElementById(`btn${i}`).disabled = true;
+                }
+            }
+        }
+        
+        // ===== FORTUNE =====
+        function fortune() {
+            const area = document.getElementById('game-area');
+            const fortunes = [
+                { luck: '大吉', msg: 'INCREDIBLE FORTUNE AWAITS!', color: '#ffd700' },
+                { luck: '中吉', msg: 'GOOD THINGS ARE COMING', color: '#6bcb77' },
+                { luck: '小吉', msg: 'A SMALL BLESSING APPROACHES', color: '#87ceeb' },
+                { luck: '吉', msg: 'FORTUNE SMILES UPON YOU', color: '#dda0dd' },
+                { luck: '末吉', msg: 'PATIENCE BRINGS REWARD', color: '#f0e68c' },
+                { luck: '凶', msg: 'BEWARE THE UPSIDE DOWN...', color: '#ff6b6b' }
+            ];
+            
+            const items = ['🎸', '🔦', '📻', '🚲', '🧇', '🎲', '📼', '🛹'];
+            
+            area.innerHTML = `
+                <div class="fortune-card">
+                    <div class="fortune-symbol">🔮</div>
+                    <div class="fortune-text">THE AV CLUB'S FORTUNE TELLER</div>
+                    <div class="fortune-text">PEER INTO THE MYSTERIES OF HAWKINS...</div>
+                    <button class="game-btn" onclick="readFortune()" style="margin-top: 20px;">READ FORTUNE ($5)</button>
+                    <div id="fortune-result" style="margin-top: 20px;"></div>
+                </div>
+            `;
+            
+            window.readFortune = function() {
+                if (state.money < 5) {
+                    document.getElementById('fortune-result').innerHTML = 
+                        '<div class="fortune-text" style="color:#ff6b6b;">NOT ENOUGH COINS!</div>';
+                    return;
+                }
+                
+                state.money -= 5;
+                updateStats();
+                playBleep();
+                
+                const f = fortunes[Math.floor(Math.random() * fortunes.length)];
+                const item = items[Math.floor(Math.random() * items.length)];
+                const luckyNum = Math.floor(Math.random() * 9) + 1;
+                
+                if (f.luck === '大吉') {
+                    state.money += 25;
+                    state.score += 10;
+                    updateStats();
+                    playWin();
+                }
+                
+                document.getElementById('fortune-result').innerHTML = `
+                    <div style="font-size: 32px; color: ${f.color}; margin: 10px 0;">${f.luck}</div>
+                    <div class="fortune-text">${f.msg}</div>
+                    <div class="fortune-text">LUCKY ITEM: ${item}</div>
+                    <div class="fortune-text">LUCKY NUMBER: ${luckyNum}</div>
+                `;
+            };
+        }
+        
+        // ===== QUICK DRAW =====
+        function quickDraw() {
+            const area = document.getElementById('game-area');
+            let gameActive = false;
+            let hits = 0;
+            let misses = 0;
+            let timeLeft = 20;
+            let targetInterval;
+            
+            area.innerHTML = `
+                <div class="game-text">SHOOT THE BANDITS! CLICK TO FIRE!</div>
+                <div class="game-text">HITS: <span id="qd-hits">0</span> | MISSES: <span id="qd-misses">0</span> | TIME: <span id="qd-time">20</span></div>
+                <div class="target-area" id="target-area"></div>
+                <button class="game-btn" onclick="startQuickDraw()">START ($10)</button>
+                <div class="game-text" id="qd-result"></div>
+            `;
+            
+            window.startQuickDraw = function() {
+                if (state.money < 10) {
+                    document.getElementById('qd-result').textContent = 'NEED $10!';
+                    return;
+                }
+                
+                state.money -= 10;
+                updateStats();
+                
+                gameActive = true;
+                hits = 0;
+                misses = 0;
+                timeLeft = 20;
+                playBleep();
+                
+                const targetArea = document.getElementById('target-area');
+                targetArea.innerHTML = '';
+                
+                targetArea.onclick = function(e) {
+                    if (!gameActive) return;
+                    if (e.target === targetArea) {
+                        misses++;
+                        document.getElementById('qd-misses').textContent = misses;
+                        playLose();
+                    }
+                };
+                
+                function spawnTarget() {
+                    if (!gameActive) return;
+                    
+                    const target = document.createElement('div');
+                    target.className = 'target';
+                    target.style.left = (Math.random() * 430) + 'px';
+                    target.style.top = (Math.random() * 210) + 'px';
+                    
+                    target.onclick = function(e) {
+                        e.stopPropagation();
+                        if (this.classList.contains('hit')) return;
+                        this.classList.add('hit');
+                        hits++;
+                        document.getElementById('qd-hits').textContent = hits;
+                        playWin();
+                        setTimeout(() => this.remove(), 300);
+                    };
+                    
+                    targetArea.appendChild(target);
+                    
+                    setTimeout(() => {
+                        if (!target.classList.contains('hit') && target.parentNode) {
+                            target.remove();
+                        }
+                    }, 2000);
+                }
+                
+                targetInterval = setInterval(spawnTarget, 800);
+                
+                const timer = setInterval(() => {
+                    timeLeft--;
+                    document.getElementById('qd-time').textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        gameActive = false;
+                        clearInterval(timer);
+                        clearInterval(targetInterval);
+                        
+                        const reward = hits * 5 - misses * 2;
+                        const finalReward = Math.max(0, reward);
+                        state.money += finalReward;
+                        state.score += hits * 3;
+                        updateStats();
+                        
+                        document.getElementById('qd-result').textContent = 
+                            `ROUND OVER! ${hits} HITS, ${misses} MISSES. +$${finalReward}`;
+                    }
+                }, 1000);
+            };
+        }
+        
+        // Initialize
+        updateStats();
+    </script>
+</body>
+</html>

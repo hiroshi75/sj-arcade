@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🕹️ Sheriff Jim's Retro Arcade</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            min-height: 100vh;
+            font-family: 'Press Start 2P', monospace;
+            color: #fff;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        
+        h1 {
+            color: #ff6b6b;
+            font-size: 28px;
+            text-shadow: 4px 4px 0 #8b0000, 0 0 30px #ff0000;
+            margin-bottom: 15px;
+            animation: flicker 2s infinite alternate;
+        }
+        
+        @keyframes flicker {
+            0%, 90%, 100% { opacity: 1; }
+            95% { opacity: 0.8; }
+        }
+        
+        .subtitle {
+            color: #ffd93d;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .counter {
+            color: #6bcb77;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .game-card {
+            background: linear-gradient(180deg, #2a2a4e 0%, #1a1a3e 100%);
+            border: 4px solid #4a4a7a;
+            padding: 25px;
+            transition: all 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+        
+        .game-card:hover {
+            border-color: #ff6b6b;
+            transform: translateY(-8px);
+            box-shadow: 0 8px 0 #1a1a2e, 0 0 30px rgba(255, 107, 107, 0.3);
+        }
+        
+        .game-number {
+            color: #4ecdc4;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .game-title {
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .game-desc {
+            color: #aaa;
+            font-size: 9px;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        
+        .game-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .tag {
+            background: #3a3a5e;
+            color: #6bcb77;
+            font-size: 8px;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        
+        .game-date {
+            color: #666;
+            font-size: 8px;
+            margin-top: 15px;
+        }
+        
+        .play-btn {
+            display: inline-block;
+            background: #6bcb77;
+            color: #0a0a0a;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 12px 20px;
+            margin-top: 15px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        
+        .play-btn:hover {
+            background: #8deb99;
+            transform: scale(1.05);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            color: #4a4a6a;
+            font-size: 10px;
+        }
+        
+        .sheriff {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="sheriff">🤠</div>
+            <h1>SHERIFF JIM'S<br>RETRO ARCADE</h1>
+            <div class="subtitle">1時間に1本、レトロゲーム制作チャレンジ</div>
+            <div class="counter">TOTAL GAMES: <span id="game-count">-</span></div>
+        </header>
+        
+        <div class="games-grid" id="games-grid">
+            <!-- Games loaded dynamically -->
+        </div>
+        
+        <footer>
+            <p>Created with ❤️ by Sheriff Jim 🤠</p>
+            <p>For Hiroshi</p>
+        </footer>
+    </div>
+    
+    <script>
+        async function loadGames() {
+            try {
+                const resp = await fetch('index.json');
+                const data = await resp.json();
+                
+                document.getElementById('game-count').textContent = data.games.length;
+                
+                const grid = document.getElementById('games-grid');
+                grid.innerHTML = data.games.map(game => `
+                    <a href="${game.path}" class="game-card">
+                        <div class="game-number">#${game.id}</div>
+                        <div class="game-title">${game.name}</div>
+                        <div class="game-desc">${game.description}</div>
+                        <div class="game-tags">
+                            ${game.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+                        </div>
+                        <div class="game-date">${new Date(game.created).toLocaleDateString('ja-JP')}</div>
+                        <div class="play-btn">▶ PLAY</div>
+                    </a>
+                `).reverse().join('');
+            } catch (e) {
+                console.error('Failed to load games:', e);
+            }
+        }
+        
+        loadGames();
+    </script>
+</body>
+</html>
