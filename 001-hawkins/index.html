@@ -444,6 +444,11 @@
             from { filter: drop-shadow(0 0 5px #ff0000); transform: scale(1); }
             to { filter: drop-shadow(0 0 15px #ff0000); transform: scale(1.1); }
         }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
     </style>
 </head>
 <body>
@@ -468,6 +473,7 @@
         <div id="location-screen" class="hidden">
             <div class="stats-bar">
                 <div class="stat">💰 $<span id="money">100</span></div>
+                <div class="stat">🎮 <span id="lives">3</span></div>
                 <div class="stat">❤️ <span id="health">100</span></div>
                 <div class="stat">⭐ <span id="score">0</span></div>
             </div>
@@ -508,6 +514,7 @@
         <div id="game-screen" class="hidden">
             <div class="stats-bar">
                 <div class="stat">💰 $<span id="money2">100</span></div>
+                <div class="stat">🎮 <span id="lives2">3</span></div>
                 <div class="stat">❤️ <span id="health2">100</span></div>
                 <div class="stat">⭐ <span id="score2">0</span></div>
             </div>
@@ -525,8 +532,10 @@
         const state = {
             money: 100,
             health: 100,
+            lives: 3,
             score: 0,
-            currentLocation: null
+            currentLocation: null,
+            invincible: false
         };
         
         // Sound effects (8-bit style using Web Audio)
@@ -557,6 +566,8 @@
         function updateStats() {
             document.getElementById('money').textContent = state.money;
             document.getElementById('money2').textContent = state.money;
+            document.getElementById('lives').textContent = state.lives;
+            document.getElementById('lives2').textContent = state.lives;
             document.getElementById('health').textContent = state.health;
             document.getElementById('health2').textContent = state.health;
             document.getElementById('score').textContent = state.score;
@@ -848,12 +859,16 @@
                     trees.push(`<span class="tree" style="left:${i*50+20}px;bottom:${Math.random()*40}px">🌲</span>`);
                 }
                 
+                const playerStyle = state.invincible ? 
+                    `left:${playerX}px;top:${playerY}px;animation:blink 0.2s infinite;` : 
+                    `left:${playerX}px;top:${playerY}px`;
+                
                 area.innerHTML = `
                     <div class="game-text">🎮 ARROW KEYS = MOVE | SPACE or X = ATTACK</div>
-                    <div class="game-text">⏱️ TIME: ${timeLeft}s | 💀 KILLS: ${huntScore}</div>
+                    <div class="game-text">⏱️ TIME: ${timeLeft}s | 💀 KILLS: ${huntScore} | 🎮 LIVES: ${state.lives}</div>
                     <div class="forest-area" id="forest" tabindex="0" style="${gameActive ? 'border-color: #6bcb77; box-shadow: 0 0 20px rgba(107, 203, 119, 0.5);' : ''}">
                         ${trees.join('')}
-                        <span class="player-icon" id="player" style="left:${playerX}px;top:${playerY}px">🔦</span>
+                        <span class="player-icon" id="player" style="${playerStyle}">🔦</span>
                         ${monsters.filter(m => m.alive).map(m => 
                             `<span class="monster" style="left:${m.x}px;top:${m.y}px">👹</span>`
                         ).join('')}
@@ -908,32 +923,50 @@
                         dy = playerY - m.y;
                         dist = Math.sqrt(dx*dx + dy*dy);
                         
-                        // Check collision with player (tighter hitbox)
-                        if (dist < 18) {
-                            state.health -= 10;
-                            updateStats();
+                        // Check collision with player (tighter hitbox, respect invincibility)
+                        if (dist < 18 && !state.invincible) {
+                            state.health -= 25;
                             playLose();
+                            
+                            // Check if lost a life
+                            if (state.health <= 0) {
+                                state.lives--;
+                                if (state.lives > 0) {
+                                    state.health = 100;
+                                    // Invincibility frames after losing a life
+                                    state.invincible = true;
+                                    setTimeout(() => { state.invincible = false; }, 2000);
+                                }
+                            } else {
+                                // Brief invincibility after hit
+                                state.invincible = true;
+                                setTimeout(() => { state.invincible = false; }, 1000);
+                            }
+                            
+                            updateStats();
                             m.x = Math.random() * 520 + 30;
                             m.y = Math.random() * 290 + 30;
                         }
                     });
                     
-                    if (timeLeft <= 0 || state.health <= 0) {
+                    if (timeLeft <= 0 || state.lives <= 0) {
                         gameActive = false;
                         clearInterval(timer);
                         
                         const reward = huntScore * 10;
                         state.money += reward;
                         state.score += huntScore * 5;
-                        updateStats();
                         
                         render();
-                        area.innerHTML += `<div class="game-text" style="color:#ff6b6b;">HUNT OVER! KILLED ${huntScore} DEMOGORGONS! +$${reward}</div>`;
                         
-                        if (state.health <= 0) {
+                        if (state.lives <= 0) {
+                            area.innerHTML += `<div class="game-text" style="color:#ff0000;font-size:24px;">💀 GAME OVER 💀</div>`;
+                            state.lives = 3;
                             state.health = 100;
-                            updateStats();
+                        } else {
+                            area.innerHTML += `<div class="game-text" style="color:#ff6b6b;">HUNT OVER! KILLED ${huntScore} DEMOGORGONS! +$${reward}</div>`;
                         }
+                        updateStats();
                     } else {
                         // Spawn more monsters
                         if (Math.random() < 0.05) spawnMonster();
