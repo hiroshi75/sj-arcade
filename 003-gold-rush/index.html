@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚂 Gold Rush Express - Sheriff Jim's Arcade</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a0a00 0%, #3d1f00 50%, #1a0a00 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            background: #2a1810;
+            border: 8px solid #8b4513;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 
+                0 0 30px rgba(255, 180, 0, 0.3),
+                inset 0 0 50px rgba(0,0,0,0.5);
+        }
+        
+        h1 {
+            color: #ffd700;
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px #000, 0 0 10px #ff8c00;
+        }
+        
+        .subtitle {
+            color: #cd853f;
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 10px;
+            color: #ffd700;
+            font-size: 16px;
+        }
+        
+        .stat {
+            background: #1a0a00;
+            padding: 5px 15px;
+            border-radius: 5px;
+            border: 2px solid #8b4513;
+        }
+        
+        #game-canvas {
+            border: 4px solid #8b4513;
+            background: #3d2817;
+            display: block;
+            margin: 0 auto;
+            image-rendering: pixelated;
+        }
+        
+        #controls {
+            text-align: center;
+            margin-top: 15px;
+            color: #cd853f;
+            font-size: 12px;
+        }
+        
+        #message {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 18px;
+            color: #ffd700;
+            min-height: 25px;
+        }
+        
+        button {
+            background: linear-gradient(180deg, #daa520 0%, #b8860b 100%);
+            border: 3px solid #8b4513;
+            color: #1a0a00;
+            padding: 10px 30px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+            text-shadow: 1px 1px 0 #ffd700;
+        }
+        
+        button:hover {
+            background: linear-gradient(180deg, #ffd700 0%, #daa520 100%);
+            transform: scale(1.05);
+        }
+        
+        .mobile-controls {
+            display: none;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .mobile-btn {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            border-radius: 10px;
+        }
+        
+        .mobile-row {
+            display: flex;
+            justify-content: center;
+            gap: 70px;
+        }
+        
+        @media (max-width: 600px) {
+            .mobile-controls {
+                display: block;
+            }
+            #controls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>🚂 GOLD RUSH EXPRESS 🪙</h1>
+        <div class="subtitle">Sheriff Jim's Railroad Adventure</div>
+        
+        <div id="stats">
+            <div class="stat">💰 GOLD: <span id="score">0</span></div>
+            <div class="stat">🏆 BEST: <span id="highscore">0</span></div>
+            <div class="stat">📏 LENGTH: <span id="length">3</span></div>
+        </div>
+        
+        <canvas id="game-canvas" width="480" height="360"></canvas>
+        
+        <div id="message">Press SPACE or tap START to begin!</div>
+        
+        <div style="text-align: center;">
+            <button id="start-btn" onclick="startGame()">🚂 START</button>
+        </div>
+        
+        <div id="controls">
+            ⬆️⬇️⬅️➡️ or WASD to move | SPACE to start/restart
+        </div>
+        
+        <div class="mobile-controls">
+            <div class="mobile-row">
+                <button class="mobile-btn" onclick="setDirection(0,-1)">⬆️</button>
+            </div>
+            <div class="mobile-row">
+                <button class="mobile-btn" onclick="setDirection(-1,0)">⬅️</button>
+                <button class="mobile-btn" onclick="setDirection(1,0)">➡️</button>
+            </div>
+            <div class="mobile-row">
+                <button class="mobile-btn" onclick="setDirection(0,1)">⬇️</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const GRID_SIZE = 20;
+        const GRID_WIDTH = canvas.width / GRID_SIZE;
+        const GRID_HEIGHT = canvas.height / GRID_SIZE;
+        
+        let train = [];
+        let direction = { x: 1, y: 0 };
+        let nextDirection = { x: 1, y: 0 };
+        let gold = { x: 0, y: 0 };
+        let rocks = [];
+        let cacti = [];
+        let score = 0;
+        let highscore = parseInt(localStorage.getItem('goldRushHighscore') || '0');
+        let gameRunning = false;
+        let gameLoop = null;
+        let speed = 150;
+        
+        document.getElementById('highscore').textContent = highscore;
+        
+        // Sound effects
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(freq, duration, type = 'square') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+        
+        function playCollect() {
+            playSound(880, 0.1);
+            setTimeout(() => playSound(1100, 0.15), 50);
+        }
+        
+        function playCrash() {
+            playSound(150, 0.3, 'sawtooth');
+            setTimeout(() => playSound(100, 0.4, 'sawtooth'), 100);
+        }
+        
+        function playChugga() {
+            playSound(100, 0.05, 'square');
+        }
+        
+        function initGame() {
+            // Initialize train (3 segments)
+            train = [
+                { x: 5, y: Math.floor(GRID_HEIGHT / 2) },
+                { x: 4, y: Math.floor(GRID_HEIGHT / 2) },
+                { x: 3, y: Math.floor(GRID_HEIGHT / 2) }
+            ];
+            direction = { x: 1, y: 0 };
+            nextDirection = { x: 1, y: 0 };
+            score = 0;
+            speed = 150;
+            
+            // Generate obstacles
+            rocks = [];
+            cacti = [];
+            for (let i = 0; i < 5; i++) {
+                rocks.push(randomPosition());
+            }
+            for (let i = 0; i < 8; i++) {
+                cacti.push(randomPosition());
+            }
+            
+            spawnGold();
+            updateStats();
+        }
+        
+        function randomPosition() {
+            let pos;
+            let attempts = 0;
+            do {
+                pos = {
+                    x: Math.floor(Math.random() * (GRID_WIDTH - 4)) + 2,
+                    y: Math.floor(Math.random() * (GRID_HEIGHT - 4)) + 2
+                };
+                attempts++;
+            } while (isOccupied(pos) && attempts < 100);
+            return pos;
+        }
+        
+        function isOccupied(pos) {
+            // Check train
+            for (let segment of train) {
+                if (segment.x === pos.x && segment.y === pos.y) return true;
+            }
+            // Check rocks
+            for (let rock of rocks) {
+                if (rock.x === pos.x && rock.y === pos.y) return true;
+            }
+            // Check cacti
+            for (let cactus of cacti) {
+                if (cactus.x === pos.x && cactus.y === pos.y) return true;
+            }
+            // Check gold
+            if (gold.x === pos.x && gold.y === pos.y) return true;
+            return false;
+        }
+        
+        function spawnGold() {
+            gold = randomPosition();
+        }
+        
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('length').textContent = train.length;
+            document.getElementById('highscore').textContent = highscore;
+        }
+        
+        function draw() {
+            // Clear canvas with desert background
+            ctx.fillStyle = '#3d2817';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid lines (subtle)
+            ctx.strokeStyle = '#4a3020';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= GRID_WIDTH; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * GRID_SIZE, 0);
+                ctx.lineTo(x * GRID_SIZE, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= GRID_HEIGHT; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * GRID_SIZE);
+                ctx.lineTo(canvas.width, y * GRID_SIZE);
+                ctx.stroke();
+            }
+            
+            // Draw rocks 🪨
+            ctx.font = '18px serif';
+            for (let rock of rocks) {
+                ctx.fillText('🪨', rock.x * GRID_SIZE + 1, rock.y * GRID_SIZE + 17);
+            }
+            
+            // Draw cacti 🌵
+            for (let cactus of cacti) {
+                ctx.fillText('🌵', cactus.x * GRID_SIZE + 1, cactus.y * GRID_SIZE + 17);
+            }
+            
+            // Draw gold 🪙
+            ctx.font = '18px serif';
+            ctx.fillText('🪙', gold.x * GRID_SIZE + 1, gold.y * GRID_SIZE + 17);
+            
+            // Draw train
+            for (let i = train.length - 1; i >= 0; i--) {
+                const segment = train[i];
+                if (i === 0) {
+                    // Locomotive 🚂
+                    ctx.fillText('🚂', segment.x * GRID_SIZE + 1, segment.y * GRID_SIZE + 17);
+                } else {
+                    // Cargo car 🚃
+                    ctx.fillText('🚃', segment.x * GRID_SIZE + 1, segment.y * GRID_SIZE + 17);
+                }
+            }
+        }
+        
+        function update() {
+            if (!gameRunning) return;
+            
+            playChugga();
+            
+            // Apply next direction
+            direction = { ...nextDirection };
+            
+            // Calculate new head position
+            const head = train[0];
+            const newHead = {
+                x: head.x + direction.x,
+                y: head.y + direction.y
+            };
+            
+            // Check wall collision (wrap around)
+            if (newHead.x < 0) newHead.x = GRID_WIDTH - 1;
+            if (newHead.x >= GRID_WIDTH) newHead.x = 0;
+            if (newHead.y < 0) newHead.y = GRID_HEIGHT - 1;
+            if (newHead.y >= GRID_HEIGHT) newHead.y = 0;
+            
+            // Check self collision
+            for (let i = 0; i < train.length; i++) {
+                if (train[i].x === newHead.x && train[i].y === newHead.y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Check rock collision
+            for (let rock of rocks) {
+                if (rock.x === newHead.x && rock.y === newHead.y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Check cactus collision
+            for (let cactus of cacti) {
+                if (cactus.x === newHead.x && cactus.y === newHead.y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Move train
+            train.unshift(newHead);
+            
+            // Check gold collection
+            if (newHead.x === gold.x && newHead.y === gold.y) {
+                score += 10;
+                playCollect();
+                spawnGold();
+                
+                // Speed up slightly
+                if (speed > 80) speed -= 2;
+                
+                // Update highscore
+                if (score > highscore) {
+                    highscore = score;
+                    localStorage.setItem('goldRushHighscore', highscore.toString());
+                }
+                
+                updateStats();
+            } else {
+                // Remove tail if no gold collected
+                train.pop();
+            }
+            
+            draw();
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(gameLoop);
+            playCrash();
+            
+            document.getElementById('message').textContent = `💥 DERAILED! Final score: ${score} gold`;
+            document.getElementById('start-btn').textContent = '🔄 RETRY';
+            
+            // Flash effect
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        function startGame() {
+            if (gameRunning) return;
+            
+            initGame();
+            gameRunning = true;
+            document.getElementById('message').textContent = '🚂 ALL ABOARD!';
+            document.getElementById('start-btn').textContent = '🚂 RUNNING...';
+            
+            draw();
+            
+            gameLoop = setInterval(() => {
+                update();
+            }, speed);
+            
+            // Adaptive speed
+            setInterval(() => {
+                if (gameRunning && gameLoop) {
+                    clearInterval(gameLoop);
+                    gameLoop = setInterval(update, speed);
+                }
+            }, 1000);
+        }
+        
+        function setDirection(x, y) {
+            // Prevent 180-degree turns
+            if (direction.x === -x && direction.y === -y) return;
+            if (x !== 0 || y !== 0) {
+                nextDirection = { x, y };
+            }
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    setDirection(0, -1);
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    setDirection(0, 1);
+                    e.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    setDirection(-1, 0);
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    setDirection(1, 0);
+                    e.preventDefault();
+                    break;
+                case ' ':
+                    if (!gameRunning) startGame();
+                    e.preventDefault();
+                    break;
+            }
+        });
+        
+        // Initial draw
+        initGame();
+        draw();
+        document.getElementById('message').textContent = 'Press SPACE or tap START to begin!';
+    </script>
+</body>
+</html>

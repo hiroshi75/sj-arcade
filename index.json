@@ -17,6 +17,14 @@
       "created": "2026-02-02T12:30:00+08:00",
       "path": "002-space-cowboy/",
       "tags": ["shooter", "arcade", "space", "western"]
+    },
+    {
+      "id": "003",
+      "name": "Gold Rush Express",
+      "description": "西部の砂漠を走る列車スネークゲーム！金塊を集めて列車を伸ばせ。岩とサボテンに注意",
+      "created": "2026-02-02T13:30:00+08:00",
+      "path": "003-gold-rush/",
+      "tags": ["snake", "arcade", "western", "train"]
     }
   ]
 }
