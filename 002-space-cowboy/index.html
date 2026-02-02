@@ -493,22 +493,15 @@
                     if (b.x > px && b.x < px + pw &&
                         b.y > py && b.y < py + ph) {
                         b.hit = true;
-                        hp -= 20;  // Bullet damage
-                        playExplosion();
-                        createParticles(player.x + 20, player.y + 20, '#f00', 20);
+                        hp -= 3;  // Bullet damage
+                        showHitFlash();
+                        createParticles(player.x + 20, player.y + 20, '#ff0', 8);
                         
                         if (hp <= 0) {
-                            lives--;
-                            if (lives <= 0) {
-                                gameOver();
-                            } else {
-                                hp = 100;
-                                invincible = true;
-                                setTimeout(() => { invincible = false; }, 2000);
-                            }
+                            playerDeath();
                         } else {
                             invincible = true;
-                            setTimeout(() => { invincible = false; }, 500);
+                            setTimeout(() => { invincible = false; }, 300);
                         }
                         updateHpBar();
                     }
@@ -525,23 +518,16 @@
                 enemies.forEach(e => {
                     if (px < e.x + e.width && px + pw > e.x &&
                         py < e.y + e.height && py + ph > e.y) {
-                        hp -= 40;  // Enemy collision damage
+                        hp -= 5;  // Enemy collision damage
                         e.dead = true;
-                        playExplosion();
-                        createParticles(player.x + 20, player.y + 20, '#f00', 20);
+                        showHitFlash();
+                        createParticles(player.x + 20, player.y + 20, '#ff0', 10);
                         
                         if (hp <= 0) {
-                            lives--;
-                            if (lives <= 0) {
-                                gameOver();
-                            } else {
-                                hp = 100;
-                                invincible = true;
-                                setTimeout(() => { invincible = false; }, 2000);
-                            }
+                            playerDeath();
                         } else {
                             invincible = true;
-                            setTimeout(() => { invincible = false; }, 1000);
+                            setTimeout(() => { invincible = false; }, 500);
                         }
                         updateHpBar();
                     }
@@ -583,6 +569,38 @@
                 hpText.textContent = hp;
             }
         }
+        
+        let hitFlashTimer = 0;
+        
+        function showHitFlash() {
+            hitFlashTimer = 10;  // Flash for 10 frames
+            playSound(300, 0.1, 'sawtooth');
+        }
+        
+        function playerDeath() {
+            lives--;
+            playExplosion();
+            // Big explosion at player position
+            createParticles(player.x + 20, player.y + 20, '#f00', 30);
+            createParticles(player.x + 20, player.y + 20, '#ff0', 20);
+            createParticles(player.x + 20, player.y + 20, '#f80', 25);
+            
+            if (lives <= 0) {
+                gameOver();
+            } else {
+                // Respawn with long invincibility
+                hp = 100;
+                player.x = 220;
+                player.y = 620;
+                invincible = true;
+                respawning = true;
+                setTimeout(() => { respawning = false; }, 1000);  // 1 sec respawn animation
+                setTimeout(() => { invincible = false; }, 3000);  // 3 sec invincibility
+                updateHpBar();
+            }
+        }
+        
+        let respawning = false;
         
         function draw() {
             // Clear
@@ -644,6 +662,13 @@
                 }
             });
             
+            // Draw hit flash overlay
+            if (hitFlashTimer > 0) {
+                ctx.fillStyle = `rgba(255, 0, 0, ${hitFlashTimer / 20})`;
+                ctx.fillRect(0, 0, 480, 720);
+                hitFlashTimer--;
+            }
+            
             // Draw player
             if (gameState === 'playing') {
                 ctx.font = '35px Arial';
@@ -657,9 +682,29 @@
                     ctx.stroke();
                 }
                 
+                // Respawn effect (pulsing glow)
+                if (respawning) {
+                    const pulse = Math.sin(Date.now() / 50) * 0.5 + 0.5;
+                    ctx.strokeStyle = `rgba(0, 255, 255, ${pulse})`;
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.arc(player.x + 20, player.y + 20, 35 + pulse * 10, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.font = '14px "Press Start 2P"';
+                    ctx.fillStyle = '#0ff';
+                    ctx.fillText('RESPAWN!', player.x - 25, player.y - 10);
+                }
+                
                 // Player ship (cowboy in spaceship) - blink when invincible
-                if (!invincible || Math.floor(Date.now() / 100) % 2 === 0) {
+                if (!invincible || Math.floor(Date.now() / 80) % 2 === 0) {
                     ctx.fillText('🚀', player.x, player.y + 35);
+                }
+                
+                // Invincibility indicator
+                if (invincible && !respawning) {
+                    ctx.font = '10px "Press Start 2P"';
+                    ctx.fillStyle = '#ff0';
+                    ctx.fillText('★SAFE★', player.x - 5, player.y - 5);
                 }
                 
                 // Power-up indicator
@@ -684,6 +729,8 @@
             lives = 3;
             hp = 100;
             invincible = false;
+            respawning = false;
+            hitFlashTimer = 0;
             wave = 1;
             player.x = 220;
             player.y = 620;
