@@ -364,4 +364,26 @@ test.describe('Sheriff Jim\'s Retro Arcade', () => {
     });
   });
 
+  test.describe('#014 Canyon Leap', () => {
+    test('タイトル画面が表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/014-canyon-leap/`);
+      await expect(page.locator('#start-screen')).toBeVisible();
+      await expect(page.locator('#start-screen .screen-title')).toContainText('CANYON LEAP');
+    });
+
+    test('ゲームが開始できる', async ({ page }) => {
+      await page.goto(`${BASE_URL}/014-canyon-leap/`);
+      await page.click('#start-btn');
+      await expect(page.locator('#start-screen')).toBeHidden();
+    });
+
+    test('パワーバーが表示される', async ({ page }) => {
+      await page.goto(`${BASE_URL}/014-canyon-leap/`);
+      await page.click('#start-btn');
+      await expect(page.locator('#power-bar')).toBeVisible();
+      await expect(page.locator('#level')).toBeVisible();
+      await expect(page.locator('#lives')).toBeVisible();
+    });
+  });
+
 });

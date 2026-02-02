@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Canyon Leap 🏜️</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a0a00;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Press Start 2P', cursive;
+      padding: 10px;
+    }
+    h1 {
+      color: #ffd700;
+      font-size: clamp(14px, 4vw, 24px);
+      text-align: center;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px #8b4513;
+    }
+    #game-container {
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 4 / 3;
+      position: relative;
+      background: linear-gradient(to bottom, #87ceeb 0%, #f4a460 60%, #8b4513 100%);
+      border: 4px solid #8b4513;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      color: #fff;
+      font-size: clamp(8px, 2vw, 12px);
+      text-shadow: 1px 1px #000;
+      z-index: 10;
+    }
+    #start-screen, #game-over {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffd700;
+      text-align: center;
+      padding: 20px;
+      z-index: 20;
+    }
+    #game-over { display: none; }
+    .screen-title {
+      font-size: clamp(16px, 5vw, 28px);
+      margin-bottom: 20px;
+    }
+    .screen-text {
+      font-size: clamp(8px, 2.5vw, 12px);
+      color: #deb887;
+      margin: 5px 0;
+      line-height: 1.8;
+    }
+    .btn {
+      background: #8b4513;
+      color: #ffd700;
+      border: 3px solid #ffd700;
+      padding: 12px 24px;
+      font-family: inherit;
+      font-size: clamp(10px, 2.5vw, 14px);
+      cursor: pointer;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+    .btn:hover { background: #a0522d; }
+    #home-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #8b4513;
+      color: #ffd700;
+      border: 2px solid #ffd700;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: clamp(8px, 2vw, 10px);
+      cursor: pointer;
+      border-radius: 4px;
+      z-index: 30;
+      text-decoration: none;
+    }
+    #home-btn:hover { background: #a0522d; }
+    #power-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      max-width: 200px;
+      height: 20px;
+      background: #333;
+      border: 2px solid #ffd700;
+      border-radius: 4px;
+      overflow: hidden;
+      z-index: 10;
+    }
+    #power-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, #32cd32, #ffd700, #ff4500);
+      transition: width 0.05s linear;
+    }
+    #final-score { color: #ffd700; font-size: clamp(12px, 3vw, 18px); }
+    @media (max-width: 480px) {
+      body { padding: 5px; }
+      h1 { margin-bottom: 5px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>🏜️ Canyon Leap 🤠</h1>
+  <div id="game-container">
+    <a href="../" id="home-btn">🏠 HOME</a>
+    <div id="ui">
+      <span>🏆 Level: <span id="level">1</span></span>
+      <span>⭐ Score: <span id="score">0</span></span>
+      <span>❤️ <span id="lives">3</span></span>
+    </div>
+    <canvas id="canvas"></canvas>
+    <div id="power-bar"><div id="power-fill"></div></div>
+    <div id="start-screen">
+      <div class="screen-title">🏜️ CANYON LEAP</div>
+      <p class="screen-text">🤠 Jump across the canyon!</p>
+      <p class="screen-text">───────────</p>
+      <p class="screen-text">HOLD Space/Tap = Charge jump</p>
+      <p class="screen-text">RELEASE = Jump!</p>
+      <p class="screen-text">───────────</p>
+      <p class="screen-text">Too short = Fall 💀</p>
+      <p class="screen-text">Too far = Overshoot 💀</p>
+      <button class="btn" id="start-btn">🤠 LEAP!</button>
+    </div>
+    <div id="game-over">
+      <div class="screen-title">💀 GAME OVER</div>
+      <p class="screen-text">You fell into the canyon!</p>
+      <p id="final-score">SCORE: 0</p>
+      <p class="screen-text">Levels cleared: <span id="final-level">0</span></p>
+      <button class="btn" id="retry-btn">🤠 TRY AGAIN</button>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 600, H = 450;
+    canvas.width = W;
+    canvas.height = H;
+
+    const GROUND_Y = H - 100;
+    const GRAVITY = 0.5;
+
+    let gameState = 'start';
+    let player = { x: 80, y: GROUND_Y, vx: 0, vy: 0, w: 30, h: 40, jumping: false, landed: false };
+    let platforms = [];
+    let level = 1;
+    let score = 0;
+    let lives = 3;
+    let charging = false;
+    let power = 0;
+    let cameraX = 0;
+
+    function generateLevel() {
+      platforms = [];
+      player = { x: 80, y: GROUND_Y - 40, vx: 0, vy: 0, w: 30, h: 40, jumping: false, landed: false };
+      cameraX = 0;
+
+      // Starting platform
+      platforms.push({ x: 0, y: GROUND_Y, w: 150, h: 100 });
+
+      // Generate platforms with increasing difficulty
+      let lastX = 150;
+      const numPlatforms = 4 + Math.min(level, 6);
+      
+      for (let i = 0; i < numPlatforms; i++) {
+        const gap = 80 + Math.random() * 40 + level * 10;
+        const platWidth = Math.max(60, 120 - level * 5);
+        const x = lastX + gap;
+        platforms.push({ x, y: GROUND_Y, w: platWidth, h: 100 });
+        lastX = x + platWidth;
+      }
+
+      // Final platform (goal)
+      platforms.push({ x: lastX + 100, y: GROUND_Y, w: 150, h: 100, goal: true });
+    }
+
+    function reset() {
+      level = 1;
+      score = 0;
+      lives = 3;
+      generateLevel();
+      updateUI();
+    }
+
+    function jump(jumpPower) {
+      if (!player.jumping && !player.landed) {
+        const angle = Math.PI / 4; // 45 degrees
+        const force = 8 + jumpPower * 12;
+        player.vx = Math.cos(angle) * force;
+        player.vy = -Math.sin(angle) * force;
+        player.jumping = true;
+      }
+    }
+
+    function update() {
+      if (gameState !== 'playing') return;
+
+      if (player.jumping) {
+        player.vy += GRAVITY;
+        player.x += player.vx;
+        player.y += player.vy;
+
+        // Camera follow
+        if (player.x > cameraX + W * 0.4) {
+          cameraX = player.x - W * 0.4;
+        }
+
+        // Check platform landing
+        for (let plat of platforms) {
+          if (player.vy > 0 &&
+              player.x + player.w > plat.x &&
+              player.x < plat.x + plat.w &&
+              player.y + player.h >= plat.y &&
+              player.y + player.h <= plat.y + 20) {
+            player.y = plat.y - player.h;
+            player.vy = 0;
+            player.vx = 0;
+            player.jumping = false;
+            
+            if (plat.goal) {
+              // Level complete!
+              score += 100 + level * 50;
+              level++;
+              generateLevel();
+            }
+            break;
+          }
+        }
+
+        // Fall into canyon
+        if (player.y > H + 50) {
+          lives--;
+          if (lives <= 0) {
+            gameOver();
+          } else {
+            generateLevel();
+          }
+        }
+      }
+
+      // Charge power
+      if (charging && !player.jumping) {
+        power = Math.min(1, power + 0.02);
+        document.getElementById('power-fill').style.width = (power * 100) + '%';
+      }
+
+      updateUI();
+    }
+
+    function gameOver() {
+      gameState = 'over';
+      document.getElementById('final-score').textContent = 'SCORE: ' + score;
+      document.getElementById('final-level').textContent = level - 1;
+      document.getElementById('game-over').style.display = 'flex';
+    }
+
+    function draw() {
+      // Sky
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+      skyGrad.addColorStop(0, '#87ceeb');
+      skyGrad.addColorStop(0.5, '#f4a460');
+      skyGrad.addColorStop(1, '#8b4513');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Sun
+      ctx.fillStyle = '#fff5e0';
+      ctx.beginPath();
+      ctx.arc(W - 60, 50, 30, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Distant mesas
+      ctx.fillStyle = '#cd853f';
+      for (let i = 0; i < 5; i++) {
+        const x = (i * 200 - cameraX * 0.3) % (W + 200) - 100;
+        ctx.fillRect(x, GROUND_Y - 80, 100, 80);
+        ctx.fillRect(x + 20, GROUND_Y - 120, 60, 40);
+      }
+
+      // Canyon depth
+      ctx.fillStyle = '#3d2314';
+      ctx.fillRect(0, GROUND_Y + 20, W, H - GROUND_Y);
+
+      // Canyon walls
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(0, GROUND_Y, W, 20);
+
+      // Platforms
+      for (let plat of platforms) {
+        const screenX = plat.x - cameraX;
+        if (screenX > -plat.w && screenX < W + plat.w) {
+          // Platform top
+          ctx.fillStyle = plat.goal ? '#ffd700' : '#deb887';
+          ctx.fillRect(screenX, plat.y, plat.w, 20);
+          
+          // Platform side
+          ctx.fillStyle = plat.goal ? '#daa520' : '#8b4513';
+          ctx.fillRect(screenX, plat.y + 20, plat.w, plat.h - 20);
+
+          // Cracks/texture
+          ctx.strokeStyle = '#654321';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(screenX + 10, plat.y + 30);
+          ctx.lineTo(screenX + 15, plat.y + 60);
+          ctx.moveTo(screenX + plat.w - 20, plat.y + 25);
+          ctx.lineTo(screenX + plat.w - 25, plat.y + 55);
+          ctx.stroke();
+
+          // Goal flag
+          if (plat.goal) {
+            ctx.fillStyle = '#8b0000';
+            ctx.fillRect(screenX + plat.w/2, plat.y - 50, 4, 50);
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.moveTo(screenX + plat.w/2 + 4, plat.y - 50);
+            ctx.lineTo(screenX + plat.w/2 + 30, plat.y - 40);
+            ctx.lineTo(screenX + plat.w/2 + 4, plat.y - 30);
+            ctx.fill();
+          }
+        }
+      }
+
+      // Draw player
+      drawPlayer();
+
+      // Level indicator
+      ctx.fillStyle = '#fff';
+      ctx.font = '10px "Press Start 2P"';
+      ctx.fillText('Level ' + level, W/2 - 40, 30);
+    }
+
+    function drawPlayer() {
+      const x = player.x - cameraX;
+      const y = player.y;
+
+      // Shadow
+      if (!player.jumping) {
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(x + player.w/2, GROUND_Y + 5, 15, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Body
+      ctx.fillStyle = '#deb887';
+      ctx.fillRect(x + 8, y + 15, 14, 20);
+
+      // Head
+      ctx.fillStyle = '#ffdbac';
+      ctx.beginPath();
+      ctx.arc(x + 15, y + 10, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hat
+      ctx.fillStyle = '#654321';
+      ctx.fillRect(x + 3, y - 2, 24, 5);
+      ctx.fillRect(x + 8, y - 10, 14, 10);
+
+      // Legs
+      ctx.fillStyle = '#4169e1';
+      if (player.jumping) {
+        // Jumping pose
+        ctx.fillRect(x + 6, y + 32, 8, 12);
+        ctx.fillRect(x + 16, y + 32, 8, 12);
+      } else {
+        ctx.fillRect(x + 8, y + 35, 6, 10);
+        ctx.fillRect(x + 16, y + 35, 6, 10);
+      }
+
+      // Boots
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(x + 6, y + (player.jumping ? 42 : 43), 10, 4);
+      ctx.fillRect(x + 14, y + (player.jumping ? 42 : 43), 10, 4);
+
+      // Arms
+      ctx.fillStyle = '#deb887';
+      if (charging) {
+        // Charging pose - arms back
+        ctx.fillRect(x - 2, y + 18, 10, 6);
+        ctx.fillRect(x + 22, y + 18, 10, 6);
+      } else if (player.jumping) {
+        // Flying pose - arms up
+        ctx.fillRect(x + 2, y + 10, 6, 12);
+        ctx.fillRect(x + 22, y + 10, 6, 12);
+      } else {
+        ctx.fillRect(x + 2, y + 18, 6, 10);
+        ctx.fillRect(x + 22, y + 18, 6, 10);
+      }
+    }
+
+    function updateUI() {
+      document.getElementById('level').textContent = level;
+      document.getElementById('score').textContent = score;
+      document.getElementById('lives').textContent = lives;
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // Input handlers
+    function startCharge() {
+      if (gameState === 'playing' && !player.jumping) {
+        charging = true;
+        power = 0;
+      }
+    }
+
+    function releaseCharge() {
+      if (charging) {
+        charging = false;
+        jump(power);
+        power = 0;
+        document.getElementById('power-fill').style.width = '0%';
+      }
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space' && !e.repeat) {
+        e.preventDefault();
+        startCharge();
+      }
+    });
+
+    document.addEventListener('keyup', e => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        releaseCharge();
+      }
+    });
+
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault();
+      startCharge();
+    });
+
+    canvas.addEventListener('touchend', e => {
+      e.preventDefault();
+      releaseCharge();
+    });
+
+    canvas.addEventListener('mousedown', e => {
+      startCharge();
+    });
+
+    canvas.addEventListener('mouseup', e => {
+      releaseCharge();
+    });
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+      document.getElementById('start-screen').style.display = 'none';
+      gameState = 'playing';
+      reset();
+    });
+
+    document.getElementById('retry-btn').addEventListener('click', () => {
+      document.getElementById('game-over').style.display = 'none';
+      gameState = 'playing';
+      reset();
+    });
+
+    generateLevel();
+    loop();
+  </script>
+</body>
+</html>
