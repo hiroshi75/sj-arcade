@@ -865,7 +865,7 @@
                 
                 area.innerHTML = `
                     <div class="game-text">🎮 ARROW KEYS = MOVE | SPACE or X = ATTACK</div>
-                    <div class="game-text">⏱️ TIME: ${timeLeft}s | 💀 KILLS: ${huntScore} | 🎮 LIVES: ${state.lives}</div>
+                    <div class="game-text">⏱️ TIME: ${timeLeft}s | 💀 KILLS: ${huntScore} | 🎮 LIVES: ${state.lives} | ❤️ HP: ${state.health}</div>
                     <div class="forest-area" id="forest" tabindex="0" style="${gameActive ? 'border-color: #6bcb77; box-shadow: 0 0 20px rgba(107, 203, 119, 0.5);' : ''}">
                         ${trees.join('')}
                         <span class="player-icon" id="player" style="${playerStyle}">🔦</span>
